@@ -1,9 +1,8 @@
-package cari
+package main
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"sync/atomic"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func init() {
+func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -25,9 +24,9 @@ func init() {
 
 	if e == nil {
 		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
-		log.Printf("%6.2f%% D %016X %6dus", 100*float64(nDataL)/float64(nDataL+nErrorsL), seqNum)
+		fmt.Printf("%6.2f%% D %016X %6dus", 100*float64(nDataL)/float64(nDataL+nErrorsL), seqNum)
 	} else {
 		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
-		log.Printf("%6.2f%% E %016X %v", 100*float64(nDataL)/float64(nDataL+nErrorsL), seqNum, e)
+		fmt.Printf("%6.2f%% E %016X %v", 100*float64(nDataL)/float64(nDataL+nErrorsL), seqNum, e)
 	}
 }
