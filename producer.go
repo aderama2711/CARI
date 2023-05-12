@@ -70,7 +70,7 @@ func main() {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				fmt.Println(interest)
-				return ndn.MakeData(interest), nil
+				return ndn.MakeData(interest, payload), nil
 			},
 			DataSigner: signer,
 		})
