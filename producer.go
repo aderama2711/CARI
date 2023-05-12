@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/eric135/go-ndn"
+	"github.com/eric135/go-ndn/endpoint"
 )
 
 func main() {
@@ -15,11 +15,11 @@ func main() {
 		rand.New(rand.NewSource(rand.Int63())).Read(payload)
 
 		p, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName("/ndn/coba"),
+			Prefix:      go-ndn.ParseName("/ndn/coba"),
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				fmt.Print(interest)
-				return ndn.MakeData(interest, payload), nil
+				return go-ndn.MakeData(interest, payload), nil
 			},
 		})
 

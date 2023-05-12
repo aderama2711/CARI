@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
-	"time"
 
-	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/eric135/go-ndn"
+	"github.com/eric135/go-ndn/endpoint"
 )
 
 func main() {
 	for {
 		var nData, nErrors atomic.Int64
 
-		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba", 200*time.Millisecond),
+		_, e := endpoint.Consume(context.Background(), go-ndn.MakeInterest("/ndn/coba"),
 			endpoint.ConsumerOptions{})
 
 		if e == nil {
