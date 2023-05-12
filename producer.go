@@ -58,24 +58,22 @@ func openUplink() (e error) {
 
 func main() {
 	openUplink()
-	for {
-		payload := make([]byte, 1024)
-		rand.New(rand.NewSource(rand.Int63())).Read(payload)
+	payload := make([]byte, 1024)
+	rand.New(rand.NewSource(rand.Int63())).Read(payload)
 
-		p, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName("/ndn/coba"),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				fmt.Println(interest)
-				return ndn.MakeData(interest, payload), nil
-			},
-		})
+	p, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
+		Prefix:      ndn.ParseName("/ndn/coba"),
+		NoAdvertise: false,
+		Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+			fmt.Println(interest)
+			return ndn.MakeData(interest, payload), nil
+		},
+	})
 
-		if e != nil {
-			fmt.Println(e)
-		}
-
-		defer p.Close()
+	if e != nil {
+		fmt.Println(e)
 	}
+
+	defer p.Close()
 
 }
