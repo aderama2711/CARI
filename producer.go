@@ -72,8 +72,7 @@ func main() {
 
 	if e != nil {
 		fmt.Println(e)
+		defer p.Close()
 	}
-
-	defer p.Close()
 
 }
