@@ -66,13 +66,13 @@ func main() {
 			Prefix:      ndn.ParseName("/ndn/coba"),
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				fmt.Print(interest)
+				fmt.Println(interest)
 				return ndn.MakeData(interest, payload), nil
 			},
 		})
 
 		if e != nil {
-			fmt.Print(e)
+			fmt.Println(e)
 		}
 
 		defer p.Close()

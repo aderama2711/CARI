@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"sync/atomic"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
@@ -58,18 +59,21 @@ func openUplink() (e error) {
 
 func main() {
 	openUplink()
+	seqNum := rand.Uint64()
 	for {
 		var nData, nErrors atomic.Int64
 
-		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba"),
+		name := "/ndn/coba"
+
+		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest(fmt.Sprintf("%s/%016X", name, seqNum+1)),
 			endpoint.ConsumerOptions{})
 
 		if e == nil {
 			nDataL, nErrorsL := nData.Add(1), nErrors.Load()
-			fmt.Printf("%6.2f%% D %6dus", 100*float64(nDataL)/float64(nDataL+nErrorsL))
+			fmt.Printf("%6.2f%% D %6dus\n", 100*float64(nDataL)/float64(nDataL+nErrorsL))
 		} else {
 			nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
-			fmt.Printf("%6.2f%% E %v", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
+			fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 		}
 	}
 
