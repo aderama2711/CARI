@@ -14,7 +14,7 @@ func main() {
 	for {
 		var nData, nErrors atomic.Int64
 
-		p, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba", 200*time.Millisecond),
+		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba", 200*time.Millisecond),
 			endpoint.ConsumerOptions{})
 
 		if e == nil {
@@ -24,8 +24,6 @@ func main() {
 			nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 			fmt.Printf("%6.2f%% E %v", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 		}
-
-		defer p.Close()
 	}
 
 }
