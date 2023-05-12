@@ -54,10 +54,12 @@ func openUplink(c context.Context) (e error) {
 }
 
 func main() {
+	ctx := context.Background()
+	openUplink(ctx)
 	for {
 		var nData, nErrors atomic.Int64
 
-		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba"),
+		_, e := endpoint.Consume(ctx, ndn.MakeInterest("/ndn/coba"),
 			endpoint.ConsumerOptions{})
 
 		if e == nil {
