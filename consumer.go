@@ -25,7 +25,7 @@ var (
 	fwFace l3.FwFace
 )
 
-func openUplink(c context.Context) (e error) {
+func openUplink() (e error) {
 	switch client := client.(type) {
 	case *gqlmgmt.Client:
 		var loc memiftransport.Locator
@@ -54,12 +54,11 @@ func openUplink(c context.Context) (e error) {
 }
 
 func main() {
-	ctx := context.Background()
-	openUplink(ctx)
+	openUplink()
 	for {
 		var nData, nErrors atomic.Int64
 
-		_, e := endpoint.Consume(ctx, ndn.MakeInterest("/ndn/coba"),
+		_, e := endpoint.Consume(context.Background(), ndn.MakeInterest("/ndn/coba"),
 			endpoint.ConsumerOptions{})
 
 		if e == nil {
