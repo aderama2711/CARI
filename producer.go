@@ -12,6 +12,7 @@ import (
 func main() {
 	payload := make([]byte, 1024)
 	rand.New(rand.NewSource(rand.Int63())).Read(payload)
+
 	p, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
 		Prefix:      ndn.ParseName("/ndn/coba"),
 		NoAdvertise: false,
@@ -20,5 +21,8 @@ func main() {
 			return ndn.MakeData(interest, payload), nil
 		},
 	})
+	if e != nil {
+		fmt.Print(e)
+	}
 	defer p.Close()
 }
