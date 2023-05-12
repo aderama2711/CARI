@@ -64,7 +64,8 @@ func main() {
 	var signer ndn.Signer
 
 	for {
-		_, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
+		ctx := context.Background()
+		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
 			Prefix:      ndn.ParseName("/ndn/coba"),
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
@@ -77,6 +78,9 @@ func main() {
 		if e != nil {
 			fmt.Println(e)
 		}
+
+		<-ctx.Done()
+		defer p.Close()
 	}
 
 }
