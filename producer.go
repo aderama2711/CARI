@@ -13,10 +13,7 @@ func main() {
 	payload := make([]byte, 1024)
 	rand.New(rand.NewSource(rand.Int63())).Read(payload)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	_, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+	_, e := endpoint.Produce(context.Background(), endpoint.ProducerOptions{
 		Prefix:      ndn.ParseName("/ndn/coba"),
 		NoAdvertise: false,
 		Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
@@ -27,6 +24,4 @@ func main() {
 	if e != nil {
 		fmt.Print(e)
 	}
-
-	<-ctx.Done()
 }
