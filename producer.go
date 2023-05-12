@@ -27,4 +27,6 @@ func main() {
 	if e != nil {
 		fmt.Print(e)
 	}
+
+	<-ctx.Done()
 }
