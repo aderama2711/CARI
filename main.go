@@ -8,6 +8,7 @@ import (
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/tlv"
 )
 
@@ -18,7 +19,19 @@ type ControlResponse struct {
 }
 
 func main() {
-	var cr ControlResponse
+	cr := get_face
+	fmt.Println(cr)
+
+	// consumer("/localhost/nfd/face/list")
+
+	// //Serve /hello interest
+	// go serve_hello("R1")
+
+	// //hello protocol every 5 second
+	// go consum_hello(5)
+}
+
+func get_face() (cr mgmt.ControlResponse) {
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 	name := ndn.ParseName("/localhost/nfd/faces/list")
@@ -41,14 +54,7 @@ func main() {
 
 	e = tlv.Decode(data.Content, &cr)
 	fmt.Println(e)
-
-	// consumer("/localhost/nfd/face/list")
-
-	// //Serve /hello interest
-	// go serve_hello("R1")
-
-	// //hello protocol every 5 second
-	// go consum_hello(5)
+	return cr
 }
 
 func serve_hello(router string) {
