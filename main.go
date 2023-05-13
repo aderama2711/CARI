@@ -38,12 +38,7 @@ func main() {
 	if e != nil {
 		fmt.Println(e)
 	} else {
-		fmt.Println(hex.EncodeToString(data.Content))
-		var pkt nfdmgmt.ControlResponse
-		if e := tlv.Decode(data.Content, &pkt); e != nil {
-			fmt.Println(e)
-		}
-		fmt.Println(pkt.Body)
+		parse_facelist(data.Content))
 	}
 
 	// consumer("/ndn/coba")
