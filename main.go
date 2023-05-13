@@ -15,7 +15,7 @@ func main() {
 
 	openUplink()
 
-	c, e := nfdmgmt.New()
+	c, _ := nfdmgmt.New()
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
@@ -34,7 +34,7 @@ func main() {
 	data, _ := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
 
-	fmt.Println(data.Content)
+	fmt.Println(data)
 
 	// consumer("/ndn/coba")
 
