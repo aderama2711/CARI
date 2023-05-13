@@ -10,9 +10,7 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/l3"
-	"github.com/usnistgov/ndn-dpdk/ndn/memiftransport"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/gqlmgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
@@ -25,14 +23,7 @@ func main() {
 
 	client, e := nfdmgmt.New()
 
-	switch c := client.(type) {
-	case *gqlmgmt.Client:
-		var loc memiftransport.Locator
-		loc.Dataroom = mtuFlag
-		face, e = c.OpenMemif(loc)
-	default:
-		face, e = c.OpenFace()
-	}
+	face, e = client.OpenFace()
 
 	if e != nil {
 		fmt.Println(client, e)
