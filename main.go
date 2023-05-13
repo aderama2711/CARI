@@ -41,9 +41,7 @@ func get_face() {
 
 	client.Prefix = ndn.ParseName("/localhost/nfd")
 
-	client.Inv
-
-	cr, e := client.Client.Invoke(context.Background(), ndn.ParseName("/face/list"))
+	cr, e := client.Invoke(context.Background(), ndn.ParseName("/face/list"))
 	if e != nil {
 		log.Printf("%v", e)
 	} else {
