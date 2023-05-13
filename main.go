@@ -18,7 +18,6 @@ import (
 
 func main() {
 	var client mgmt.Client
-	client, e := nfdmgmt.New()
 
 	switch client := client.(type) {
 	case *gqlmgmt.Client:
@@ -45,6 +44,8 @@ func main() {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
+	c, e := nfdmgmt.New()
+
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 
@@ -57,7 +58,7 @@ func main() {
 		},
 	}
 
-	client.Signer.Sign(&interest)
+	c.Signer.Sign(&interest)
 
 	data, _ := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
