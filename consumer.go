@@ -9,25 +9,24 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func consumer() {
+func consumer(name string) {
 	openUplink()
 	// seqNum := rand.Uint64()
-	for {
-		var nData, nErrors atomic.Int64
+	var nData, nErrors atomic.Int64
 
-		name := ndn.ParseName("/ndn/coba")
+	interest := ndn.ParseName(name)
 
-		data, e := endpoint.Consume(context.Background(), ndn.MakeInterest(name),
-			endpoint.ConsumerOptions{})
+	data, e := endpoint.Consume(context.Background(), ndn.MakeInterest(interest),
+		endpoint.ConsumerOptions{})
 
-		if e == nil {
-			nDataL, nErrorsL := nData.Add(1), nErrors.Load()
-			fmt.Println(data.Content)
-			fmt.Printf("%6.2f%% D %6dus\n", 100*float64(nDataL)/float64(nDataL+nErrorsL))
-		} else {
-			nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
-			fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
-		}
+	if e == nil {
+		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
+		fmt.Println(data.Content)
+		content := string(data.Content[:])
+		fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
+	} else {
+		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
+		fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 	}
 
 }

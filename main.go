@@ -1,5 +1,6 @@
 package main
 
 func main() {
-	producer()
+	producer("/ndn/coba", "R1")
+	//consumer("/ndn/coba")
 }

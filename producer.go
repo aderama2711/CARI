@@ -3,23 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func producer() {
+func producer(name string, content string) {
 	openUplink()
-	payload := make([]byte, 1024)
-	rand.New(rand.NewSource(rand.Int63())).Read(payload)
+	payload := []byte(content)
 
 	var signer ndn.Signer
 
 	for {
 		ctx := context.Background()
 		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName("/ndn/coba"),
+			Prefix:      ndn.ParseName(name),
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				fmt.Println(interest)
