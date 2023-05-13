@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
-	"github.com/usnistgov/ndn-dpdk/ndn/tlv"
 )
 
 func main() {
@@ -38,7 +36,7 @@ func main() {
 	if e != nil {
 		fmt.Println(e)
 	} else {
-		parse_facelist(data.Content))
+		parse_facelist(data.Content)
 	}
 
 	// consumer("/ndn/coba")
