@@ -11,13 +11,14 @@ func main() {
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
-	consumer_interest(ndn.Interest{
+	consumer_interest(ndn.Signer.Sign(&ndn.Interest{
 		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
 		MustBeFresh: true,
 		SigInfo: &ndn.SigInfo{
 			Nonce: sigNonce[:],
 			Time:  uint64(time.Now().UnixMilli()),
-		}})
+		}}),
+	)
 
 	// consumer("/localhost/nfd/face/list")
 
