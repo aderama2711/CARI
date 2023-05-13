@@ -12,7 +12,7 @@ func main() {
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 	consumer_interest(ndn.Interest{
-		Name:        "/localhost/nfd/faces/list",
+		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
 		MustBeFresh: true,
 		SigInfo: &ndn.SigInfo{
 			Nonce: sigNonce[:],
