@@ -5,14 +5,17 @@ import (
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
+	"github.com/usnistgov/ndn-dpdk/ndn/an"
 )
 
 func main() {
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
+	name := ndn.ParseName("/localhost/nfd/faces/list")
+	name = append(name, ndn.NameComponentFrom(an.TtGenericNameComponent))
 	interest := ndn.Interest{
-		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
+		Name:        name,
 		MustBeFresh: true,
 		SigInfo: &ndn.SigInfo{
 			Nonce: sigNonce[:],
