@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 )
 
 func main() {
+	openUplink()
 	c, _ := nfdmgmt.New()
 
 	var sigNonce [8]byte
@@ -36,11 +38,12 @@ func main() {
 	if e != nil {
 		fmt.Println(e)
 	} else {
+		fmt.Println(hex.EncodeToString(data.Content))
 		var pkt nfdmgmt.ControlResponse
 		if e := tlv.Decode(data.Content, &pkt); e != nil {
-			return e
+			fmt.Println(e)
 		}
-		fmt.Println(pkt.Data.Content)
+		fmt.Println(pkt.Body)
 	}
 
 	// consumer("/ndn/coba")
