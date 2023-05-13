@@ -23,6 +23,7 @@ func main() {
 	interest := ndn.Interest{
 		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
 		MustBeFresh: true,
+		CanBePrefix: true,
 		SigInfo: &ndn.SigInfo{
 			Nonce: sigNonce[:],
 			Time:  uint64(time.Now().UnixMilli()),
