@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
+	"fmt"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/an"
+	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/tlv"
 )
 
 func main() {
@@ -13,7 +16,6 @@ func main() {
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 	name := ndn.ParseName("/localhost/nfd/faces/list")
-	name = append(name, ndn.NameComponentFrom(an.TtGenericNameComponent))
 	interest := ndn.Interest{
 		Name:        name,
 		MustBeFresh: true,
@@ -26,7 +28,13 @@ func main() {
 
 	Signer.Sign(&interest)
 
-	consumer_interest(interest)
+	data, e := endpoint.Consume(context.Background(), interest)
+	if e != nil {
+		fmt.Println("consumer error: %w", e)
+	}
+
+	e = tlv.Decode(data.Content)
+	fmt.Println(e)
 
 	// consumer("/localhost/nfd/face/list")
 
