@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
+	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
+	"github.com/usnistgov/ndn-dpdk/ndn/tlv"
 )
 
 func main() {
@@ -27,12 +30,17 @@ func main() {
 
 	c.Signer.Sign(&interest)
 
-	content, e := consumer(interest)
+	data, e := endpoint.Consume(context.Background(), interest,
+		endpoint.ConsumerOptions{})
 
 	if e != nil {
 		fmt.Println(e)
 	} else {
-		fmt.Println(content)
+		var pkt nfdmgmt.ControlResponse
+		if e := tlv.Decode(data.Content, &pkt); e != nil {
+			return e
+		}
+		fmt.Println(pkt.Data.Content)
 	}
 
 	// consumer("/ndn/coba")
