@@ -31,10 +31,15 @@ func main() {
 
 	c.Signer.Sign(&interest)
 
-	data, _ := endpoint.Consume(context.Background(), interest,
+	data, e := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
 
-	fmt.Println(data)
+	if e != nil {
+		fmt.Println(e)
+	}
+	else{
+		fmt.Println(data)
+	}
 
 	// consumer("/ndn/coba")
 
