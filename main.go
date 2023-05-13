@@ -1,18 +1,12 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
 	"time"
-
-	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func main() {
 
-	get_face()
+	consumer("/localhost/nfd/face/list")
 
 	// //Serve /hello interest
 	// go serve_hello("R1")
@@ -30,21 +24,5 @@ func consum_hello(delay int) {
 	for {
 		consumer("/hello")
 		time.Sleep(interval)
-	}
-}
-
-func get_face() {
-	client, e := nfdmgmt.New()
-	if e != nil {
-		fmt.Println(e)
-	}
-
-	client.Prefix = ndn.ParseName("/localhost/nfd/face/list")
-
-	cr, e := client.Invoke(context.Background())
-	if e != nil {
-		log.Printf("%v", e)
-	} else {
-		log.Printf("%d", cr.StatusCode)
 	}
 }
