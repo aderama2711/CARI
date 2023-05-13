@@ -11,11 +11,13 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/l3"
 	"github.com/usnistgov/ndn-dpdk/ndn/memiftransport"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/gqlmgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func main() {
+	var client mgmt.Client
 	client, e := nfdmgmt.New()
 
 	switch client := client.(type) {
