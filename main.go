@@ -19,14 +19,17 @@ import (
 func main() {
 	var client mgmt.Client
 
+	c, e := nfdmgmt.New()
+
 	switch client := client.(type) {
 	case *gqlmgmt.Client:
 		var loc memiftransport.Locator
 		loc.Dataroom = mtuFlag
-		face, e = client.OpenMemif(loc)
+		face, e := client.OpenMemif(loc)
 	default:
-		face, e = client.OpenFace()
+		face, e := client.OpenFace()
 	}
+
 	if e != nil {
 		fmt.Println(client, e)
 	}
@@ -43,8 +46,6 @@ func main() {
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
-
-	c, e := nfdmgmt.New()
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
