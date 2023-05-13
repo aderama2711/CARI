@@ -29,9 +29,9 @@ func main() {
 	case *gqlmgmt.Client:
 		var loc memiftransport.Locator
 		loc.Dataroom = mtuFlag
-		face, e := client.OpenMemif(loc)
+		face, e = client.OpenMemif(loc)
 	default:
-		face, e := client.OpenFace()
+		face, e = client.OpenFace()
 	}
 
 	if e != nil {
