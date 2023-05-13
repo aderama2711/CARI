@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -35,7 +36,7 @@ func consum_hello(delay int) {
 func get_face() {
 	client, e := nfdmgmt.New()
 	if e != nil {
-		return e
+		fmt.Println(e)
 	}
 
 	client.Prefix = ndn.ParseName("/localhost/nfd")
