@@ -1,57 +1,42 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"fmt"
 	"time"
+
+	"github.com/usnistgov/ndn-dpdk/ndn"
+	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func main() {
-	// var (
-	// 	client mgmt.Client
-	// 	face   mgmt.Face
-	// 	fwFace l3.FwFace
-	// )
 
-	// face, e := client.OpenFace()
+	openUplink()
 
-	// if e != nil {
-	// 	fmt.Println(client, e)
-	// }
-	// l3face := face.Face()
+	c, e := nfdmgmt.New()
 
-	// fw := l3.GetDefaultForwarder()
-	// if fwFace, e = fw.AddFace(l3face); e != nil {
-	// 	fmt.Println(client, e)
-	// }
-	// fwFace.AddRoute(ndn.Name{})
-	// fw.AddReadvertiseDestination(face)
+	var sigNonce [8]byte
+	rand.Read(sigNonce[:])
 
-	// log.Printf("uplink opened, state is %s", l3face.State())
-	// l3face.OnStateChange(func(st l3.TransportState) {
-	// 	log.Printf("uplink state changes to %s", l3face.State())
-	// })
+	interest := ndn.Interest{
+		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
+		MustBeFresh: true,
+		SigInfo: &ndn.SigInfo{
+			Nonce: sigNonce[:],
+			Time:  uint64(time.Now().UnixMilli()),
+		},
+	}
 
-	// c, e := nfdmgmt.New()
+	c.Signer.Sign(&interest)
 
-	// var sigNonce [8]byte
-	// rand.Read(sigNonce[:])
+	data, _ := endpoint.Consume(context.Background(), interest,
+		endpoint.ConsumerOptions{})
 
-	// interest := ndn.Interest{
-	// 	Name:        ndn.ParseName("/localhost/nfd/faces/list"),
-	// 	MustBeFresh: true,
-	// 	SigInfo: &ndn.SigInfo{
-	// 		Nonce: sigNonce[:],
-	// 		Time:  uint64(time.Now().UnixMilli()),
-	// 	},
-	// }
+	fmt.Println(data.Content)
 
-	// c.Signer.Sign(&interest)
-
-	// data, _ := endpoint.Consume(context.Background(), interest,
-	// 	endpoint.ConsumerOptions{})
-
-	// fmt.Println(data.Content)
-
-	consumer("/ndn/coba")
+	// consumer("/ndn/coba")
 
 	// //Serve /hello interest
 	// go serve_hello("R1")
