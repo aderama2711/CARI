@@ -23,15 +23,15 @@ func main() {
 		fwFace l3.FwFace
 	)
 
-	c, e := nfdmgmt.New()
+	client, e := nfdmgmt.New()
 
-	switch client := client.(type) {
+	switch c := client.(type) {
 	case *gqlmgmt.Client:
 		var loc memiftransport.Locator
 		loc.Dataroom = mtuFlag
-		face, e = client.OpenMemif(loc)
+		face, e = c.OpenMemif(loc)
 	default:
-		face, e = client.OpenFace()
+		face, e = c.OpenFace()
 	}
 
 	if e != nil {
