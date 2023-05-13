@@ -38,7 +38,7 @@ func main() {
 	if e != nil {
 		fmt.Println(e)
 	} else {
-		fmt.Println(data)
+		fmt.Println(data.content)
 	}
 
 	// consumer("/ndn/coba")
