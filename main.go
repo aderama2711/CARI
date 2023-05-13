@@ -21,9 +21,7 @@ func main() {
 		fwFace l3.FwFace
 	)
 
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
+	face, e := client.OpenFace()
 
 	if e != nil {
 		fmt.Println(client, e)
@@ -42,6 +40,8 @@ func main() {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
+	c, e := nfdmgmt.New()
+
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 
@@ -54,7 +54,7 @@ func main() {
 		},
 	}
 
-	client.Signer.Sign(&interest)
+	c.Signer.Sign(&interest)
 
 	data, _ := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
