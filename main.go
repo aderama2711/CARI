@@ -1,67 +1,57 @@
 package main
 
 import (
-	"context"
-	"crypto/rand"
-	"fmt"
-	"log"
 	"time"
-
-	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
-	"github.com/usnistgov/ndn-dpdk/ndn/l3"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func main() {
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
+	// var (
+	// 	client mgmt.Client
+	// 	face   mgmt.Face
+	// 	fwFace l3.FwFace
+	// )
 
-	face, e := client.OpenFace()
+	// face, e := client.OpenFace()
 
-	if e != nil {
-		fmt.Println(client, e)
-	}
-	l3face := face.Face()
+	// if e != nil {
+	// 	fmt.Println(client, e)
+	// }
+	// l3face := face.Face()
 
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(client, e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
+	// fw := l3.GetDefaultForwarder()
+	// if fwFace, e = fw.AddFace(l3face); e != nil {
+	// 	fmt.Println(client, e)
+	// }
+	// fwFace.AddRoute(ndn.Name{})
+	// fw.AddReadvertiseDestination(face)
 
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+	// log.Printf("uplink opened, state is %s", l3face.State())
+	// l3face.OnStateChange(func(st l3.TransportState) {
+	// 	log.Printf("uplink state changes to %s", l3face.State())
+	// })
 
-	c, e := nfdmgmt.New()
+	// c, e := nfdmgmt.New()
 
-	var sigNonce [8]byte
-	rand.Read(sigNonce[:])
+	// var sigNonce [8]byte
+	// rand.Read(sigNonce[:])
 
-	interest := ndn.Interest{
-		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
-		MustBeFresh: true,
-		SigInfo: &ndn.SigInfo{
-			Nonce: sigNonce[:],
-			Time:  uint64(time.Now().UnixMilli()),
-		},
-	}
+	// interest := ndn.Interest{
+	// 	Name:        ndn.ParseName("/localhost/nfd/faces/list"),
+	// 	MustBeFresh: true,
+	// 	SigInfo: &ndn.SigInfo{
+	// 		Nonce: sigNonce[:],
+	// 		Time:  uint64(time.Now().UnixMilli()),
+	// 	},
+	// }
 
-	c.Signer.Sign(&interest)
+	// c.Signer.Sign(&interest)
 
-	data, _ := endpoint.Consume(context.Background(), interest,
-		endpoint.ConsumerOptions{})
+	// data, _ := endpoint.Consume(context.Background(), interest,
+	// 	endpoint.ConsumerOptions{})
 
-	fmt.Println(data.Content)
+	// fmt.Println(data.Content)
 
-	// consumer("/localhost/nfd/face/list")
+	consumer("/ndn/coba")
 
 	// //Serve /hello interest
 	// go serve_hello("R1")

@@ -8,7 +8,6 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/memiftransport"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/gqlmgmt"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 var (
@@ -23,8 +22,6 @@ var (
 )
 
 func openUplink() (e error) {
-	client, e = nfdmgmt.New()
-
 	switch client := client.(type) {
 	case *gqlmgmt.Client:
 		var loc memiftransport.Locator
