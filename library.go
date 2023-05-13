@@ -22,7 +22,7 @@ var (
 	fwFace l3.FwFace
 )
 
-func openUplink() (e error) {
+func openUplink() (client mgmt.Client, e error) {
 	client, e = nfdmgmt.New()
 
 	switch client := client.(type) {
@@ -34,13 +34,13 @@ func openUplink() (e error) {
 		face, e = client.OpenFace()
 	}
 	if e != nil {
-		return e
+		return client, e
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		return e
+		return client, e
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -49,5 +49,5 @@ func openUplink() (e error) {
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
-	return nil
+	return client, nil
 }
