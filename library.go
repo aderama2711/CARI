@@ -12,17 +12,14 @@ import (
 )
 
 var (
-	gqlserver string
-	mtuFlag   int
-	useNfd    bool
-	enableLog bool
+	mtuFlag int
 
 	client mgmt.Client
 	face   mgmt.Face
 	fwFace l3.FwFace
 )
 
-func openUplink() (client mgmt.Client, e error) {
+func openUplink() (client nfdmgmt.Client, e error) {
 	client, e = nfdmgmt.New()
 
 	switch client := client.(type) {

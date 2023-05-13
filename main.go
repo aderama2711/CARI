@@ -27,7 +27,7 @@ func main() {
 
 	client.Signer.Sign(&interest)
 
-	data, e := endpoint.Consume(context.Background(), interest,
+	data, _ := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
 
 	fmt.Println(data.Content)
