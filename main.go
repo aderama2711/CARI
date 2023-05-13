@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+
 	openUplink()
 	c, _ := nfdmgmt.New()
 
@@ -46,6 +47,8 @@ func main() {
 
 	// //hello protocol every 5 second
 	// go consum_hello(5)
+
+	fmt.Println(facelist)
 }
 
 func serve_hello(router string) {

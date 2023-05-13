@@ -19,6 +19,7 @@ type faces struct {
 var facelist map[uint64]faces
 
 func parse_facelist(raw []byte) {
+	facelist = make(map[uint64]faces)
 	var (
 		nextface uint64
 		length   uint64
@@ -100,11 +101,10 @@ func parse_facelist(raw []byte) {
 			token := make([]byte, 16)
 			rand.Read(token)
 			r_token := hex.EncodeToString(token)
+			fmt.Println(faceid)
 			facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: r_token}
 		}
 	}
-
-	fmt.Println(facelist)
 }
 
 func check_type(wire []byte) (res uint64) {
