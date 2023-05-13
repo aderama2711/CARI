@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	producer()
+}
+
+func producer() {
 	openUplink()
 	payload := make([]byte, 1024)
 	rand.New(rand.NewSource(rand.Int63())).Read(payload)

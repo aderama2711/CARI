@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	consumer()
+}
+
+func consumer() {
 	openUplink()
 	// seqNum := rand.Uint64()
 	for {
