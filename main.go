@@ -17,7 +17,11 @@ import (
 )
 
 func main() {
-	var client mgmt.Client
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
 
 	c, e := nfdmgmt.New()
 
