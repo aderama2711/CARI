@@ -36,8 +36,7 @@ func main() {
 
 	if e != nil {
 		fmt.Println(e)
-	}
-	else{
+	} else {
 		fmt.Println(data)
 	}
 
