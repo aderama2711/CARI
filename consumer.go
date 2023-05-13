@@ -9,10 +9,6 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func main() {
-	consumer()
-}
-
 func consumer() {
 	openUplink()
 	// seqNum := rand.Uint64()

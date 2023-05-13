@@ -9,10 +9,6 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func main() {
-	producer()
-}
-
 func producer() {
 	openUplink()
 	payload := make([]byte, 1024)
