@@ -28,5 +28,23 @@ func consumer(name string) {
 		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 		fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 	}
+}
 
+func consumer_interest(Interest ndn.Interest) {
+	openUplink()
+	// seqNum := rand.Uint64()
+	var nData, nErrors atomic.Int64
+
+	data, e := endpoint.Consume(context.Background(), Interest,
+		endpoint.ConsumerOptions{})
+
+	if e == nil {
+		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
+		fmt.Println(data.Content)
+		content := string(data.Content[:])
+		fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
+	} else {
+		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
+		fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
+	}
 }

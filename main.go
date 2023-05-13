@@ -1,12 +1,25 @@
 package main
 
 import (
+	"crypto/rand"
 	"time"
+
+	"github.com/usnistgov/ndn-dpdk/ndn"
 )
 
 func main() {
 
-	consumer("/localhost/nfd/face/list")
+	var sigNonce [8]byte
+	rand.Read(sigNonce[:])
+	consumer_interest(ndn.Interest{
+		Name:        "/localhost/nfd/faces/list",
+		MustBeFresh: true,
+		SigInfo: &ndn.SigInfo{
+			Nonce: sigNonce[:],
+			Time:  uint64(time.Now().UnixMilli()),
+		}})
+
+	// consumer("/localhost/nfd/face/list")
 
 	// //Serve /hello interest
 	// go serve_hello("R1")
