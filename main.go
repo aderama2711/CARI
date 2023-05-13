@@ -54,7 +54,7 @@ func main() {
 		},
 	}
 
-	c.Signer.Sign(&interest)
+	client.Signer.Sign(&interest)
 
 	data, _ := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
