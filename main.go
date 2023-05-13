@@ -8,12 +8,12 @@ import (
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
-	"github.com/usnistgov/ndn-dpdk/ndn/nfdmgmt"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/tlv"
 )
 
 func main() {
-	cr := nfdmgmt.ControlResponse
+	cr := mgmt.ControlResponse
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
 	name := ndn.ParseName("/localhost/nfd/faces/list")
