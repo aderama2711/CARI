@@ -2,12 +2,17 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 )
 
 func main() {
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 
 	// consumer("/ndn/coba")
 
@@ -16,10 +21,15 @@ func main() {
 
 	// //hello protocol every 5 second
 	go consum_hello(5)
+
+	wg.Wait()
 }
 
 func serve_hello(router string) {
-	producer("/hello", router)
+	for {
+		producer("/hello", router)
+	}
+
 }
 
 func consum_hello(delay int) {
