@@ -102,8 +102,10 @@ func parse_facelist(raw []byte) {
 			stoken = "/" + stoken
 			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
+				fmt.Println("Use existing")
 				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
 			} else {
+				fmt.Println("Create new")
 				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
 			}
 

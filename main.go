@@ -21,7 +21,7 @@ func main() {
 	go serve_hello("R1")
 
 	// //hello protocol every 5 second
-	go consum_hello(5)
+	go consume_hello(5)
 
 	wg.Wait()
 }
@@ -31,8 +31,8 @@ func serve_hello(router string) {
 
 }
 
-func consum_hello(delay int) {
-	interval := 5 * time.Second
+func consume_hello(delay time.Duration) {
+	interval := delay * time.Second
 	for {
 		//update facelist
 		update_facelist()
