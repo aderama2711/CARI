@@ -31,8 +31,7 @@ func parse_facelist(raw []byte) {
 	pointer = 0
 	for pointer != uint64(len(raw)) {
 		// check per face
-		data := hex.EncodeToString([]byte{raw[pointer]})
-		if data == "80" {
+		if data := hex.EncodeToString([]byte{raw[pointer]}); data == "80" {
 			pointer++
 			// fmt.Println("data:", data)
 			octet := check_type([]byte{raw[pointer]})
@@ -45,8 +44,7 @@ func parse_facelist(raw []byte) {
 			nextface = pointer + length
 
 			for pointer < nextface {
-				data := hex.EncodeToString([]byte{raw[pointer]})
-				if data == "69" {
+				if data := hex.EncodeToString([]byte{raw[pointer]}); data == "69" {
 					// fmt.Println("data:", data)
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
@@ -59,7 +57,7 @@ func parse_facelist(raw []byte) {
 					faceid = get_data(raw[pointer : pointer+length])
 					// fmt.Println("faceid: ", faceid)
 					pointer += length
-				} else if data == "92" {
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "92" {
 					// fmt.Println("data:", data)
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
@@ -72,7 +70,7 @@ func parse_facelist(raw []byte) {
 					outi = get_data(raw[pointer : pointer+length])
 					// fmt.Println("outi: ", outi)
 					pointer += length
-				} else if data == "97" {
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "97" {
 					// fmt.Println("data:", data)
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
