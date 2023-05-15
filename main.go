@@ -41,6 +41,8 @@ func consum_hello(delay int) {
 		for k, v := range facelist {
 			register_route(v.tkn, 0, int(k))
 
+			fmt.Println(k, v.tkn)
+
 			//send hello interest to every face
 			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn)})
 

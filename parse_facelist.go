@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 )
 
 type faces struct {
@@ -58,7 +57,7 @@ func parse_facelist(raw []byte) {
 					}
 					pointer += octet
 					faceid = get_data(raw[pointer : pointer+length])
-					fmt.Println("faceid: ", faceid)
+					// fmt.Println("faceid: ", faceid)
 					pointer += length
 				} else if data == "92" {
 					// fmt.Println("data:", data)
@@ -71,7 +70,7 @@ func parse_facelist(raw []byte) {
 					}
 					pointer += octet
 					outi = get_data(raw[pointer : pointer+length])
-					fmt.Println("outi: ", outi)
+					// fmt.Println("outi: ", outi)
 					pointer += length
 				} else if data == "97" {
 					// fmt.Println("data:", data)
@@ -84,7 +83,7 @@ func parse_facelist(raw []byte) {
 					}
 					pointer += octet
 					innack = get_data(raw[pointer : pointer+length])
-					fmt.Println("innack: ", innack)
+					// fmt.Println("innack: ", innack)
 					pointer += length
 				} else {
 					pointer++
@@ -101,7 +100,7 @@ func parse_facelist(raw []byte) {
 			token := make([]byte, 16)
 			rand.Read(token)
 			r_token := hex.EncodeToString(token)
-			fmt.Println(faceid)
+			// fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: r_token, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
 			}

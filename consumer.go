@@ -24,7 +24,7 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	data, e := endpoint.Consume(context.Background(), ndn.MakeInterest(interest),
 		endpoint.ConsumerOptions{})
 
-	rtt = float64(time.Since(t0) / time.Millisecond)
+	rtt = float64(time.Since(t0).Milliseconds())
 
 	if e == nil {
 		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
@@ -51,7 +51,7 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	rtt = float64(time.Since(t0) / time.Millisecond)
+	rtt = float64(time.Since(t0).Milliseconds())
 
 	if e == nil {
 		nDataL, nErrorsL := nData.Add(1), nErrors.Load()

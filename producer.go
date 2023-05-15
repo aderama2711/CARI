@@ -20,7 +20,7 @@ func producer(name string, content string) {
 			Prefix:      ndn.ParseName(name),
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				fmt.Println(interest)
+				// fmt.Println(interest)
 				return ndn.MakeData(interest, payload), nil
 			},
 			DataSigner: signer,
