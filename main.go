@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
@@ -10,29 +11,19 @@ import (
 func main() {
 	openUplink()
 
-	interest := ndn.MakeInterest(ndn.ParseName("/ndn/coba"), ndn.ForwardingHint{ndn.ParseName("/abc"), ndn.ParseName("/ndn/coba")})
+	var wg sync.WaitGroup
 
-	data, _, _, e := consumer_interest(interest)
+	wg.Add(1)
 
-	if e == nil {
-		fmt.Println(data)
-	} else {
-		fmt.Println(e)
-	}
+	// consumer("/ndn/coba")
 
-	// var wg sync.WaitGroup
+	// //Serve /hello interest
+	go serve_hello("R1")
 
-	// wg.Add(1)
+	// //hello protocol every 5 second
+	go consum_hello(5)
 
-	// // consumer("/ndn/coba")
-
-	// // //Serve /hello interest
-	// go serve_hello("R1")
-
-	// // //hello protocol every 5 second
-	// go consum_hello(5)
-
-	// wg.Wait()
+	wg.Wait()
 }
 
 func serve_hello(router string) {
