@@ -34,6 +34,7 @@ func serve_hello(router string) {
 }
 
 func consum_hello(delay int) {
+	var FH []ndn.Name
 	interval := 5 * time.Second
 	for {
 		//update facelist
@@ -44,8 +45,11 @@ func consum_hello(delay int) {
 
 			fmt.Println(k, v.tkn)
 
+			FH = append(FH, ndn.ParseName(v.tkn))
+			FH = append(FH, ndn.ParseName("/hello"))
+
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn)})
+			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{FH})
 
 			data, rtt, thg, e := consumer_interest(interest)
 
