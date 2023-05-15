@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
@@ -15,7 +14,7 @@ import (
 func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	openUplink()
 	// seqNum := rand.Uint64()
-	var nData, nErrors atomic.Int64
+	// var nData, nErrors atomic.Int64
 
 	interest := ndn.ParseName(name)
 
@@ -27,14 +26,14 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	rtt = float64(time.Since(t0).Milliseconds())
 
 	if e == nil {
-		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
-		fmt.Println(data.Content)
-		content = string(data.Content[:])
-		fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
+		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
+		// fmt.Println(data.Content)
+		// content = string(data.Content[:])
+		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
 		thg = float64(len(content)) / float64(rtt/1000)
 	} else {
-		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
-		fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
+		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
+		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 		return content, 0, 0, e
 	}
 
@@ -44,7 +43,7 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg float64, e error) {
 	openUplink()
 	// seqNum := rand.Uint64()
-	var nData, nErrors atomic.Int64
+	// var nData, nErrors atomic.Int64
 
 	t0 := time.Now()
 
@@ -54,14 +53,14 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	rtt = float64(time.Since(t0).Milliseconds())
 
 	if e == nil {
-		nDataL, nErrorsL := nData.Add(1), nErrors.Load()
-		fmt.Println(data.Content)
+		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
+		// fmt.Println(data.Content)
 		content = string(data.Content[:])
-		fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
+		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
 		thg = float64(len(content)) / float64(rtt/1000)
 	} else {
-		nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
-		fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
+		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
+		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 		return content, 0, 0, e
 	}
 

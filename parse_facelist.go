@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 )
 
 type faces struct {
@@ -98,7 +99,7 @@ func parse_facelist(raw []byte) {
 			token := make([]byte, 16)
 			rand.Read(token)
 			r_token := hex.EncodeToString(token)
-			// fmt.Println(faceid)
+			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
 			} else {
