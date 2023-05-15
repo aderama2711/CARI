@@ -19,7 +19,6 @@ type faces struct {
 var facelist map[uint64]faces
 
 func parse_facelist(raw []byte) {
-	facelist = make(map[uint64]faces)
 	var (
 		nextface uint64
 		length   uint64

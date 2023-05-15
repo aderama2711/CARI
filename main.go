@@ -10,6 +10,7 @@ import (
 
 func main() {
 	openUplink()
+	facelist = make(map[uint64]faces)
 
 	var wg sync.WaitGroup
 
