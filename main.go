@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
@@ -13,7 +14,7 @@ func main() {
 	c, _ := nfdmgmt.New()
 
 	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
-		Name:   "/",
+		Name:   ndn.ParseName("/"),
 		Origin: 0,
 		Cost:   0,
 		FaceId: 289,
