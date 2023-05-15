@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func consumer(name string) (content string, e error) {
@@ -53,4 +56,33 @@ func consumer_interest(Interest ndn.Interest) (content string, e error) {
 	}
 
 	return content, nil
+}
+
+func update_facelist() {
+	openUplink()
+	c, _ := nfdmgmt.New()
+
+	var sigNonce [8]byte
+	rand.Read(sigNonce[:])
+
+	interest := ndn.Interest{
+		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
+		MustBeFresh: true,
+		CanBePrefix: true,
+		SigInfo: &ndn.SigInfo{
+			Nonce: sigNonce[:],
+			Time:  uint64(time.Now().UnixMilli()),
+		},
+	}
+
+	c.Signer.Sign(&interest)
+
+	data, e := endpoint.Consume(context.Background(), interest,
+		endpoint.ConsumerOptions{})
+
+	if e != nil {
+		fmt.Println(e)
+	} else {
+		parse_facelist(data.Content)
+	}
 }

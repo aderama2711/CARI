@@ -102,7 +102,11 @@ func parse_facelist(raw []byte) {
 			rand.Read(token)
 			r_token := hex.EncodeToString(token)
 			fmt.Println(faceid)
+			if _, ok := facelist[faceid]; ok {
+				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: r_token, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
+			}
 			facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: r_token}
+
 		}
 	}
 }
