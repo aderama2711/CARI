@@ -27,9 +27,7 @@ func main() {
 }
 
 func serve_hello(router string) {
-	for {
-		producer("/hello", router)
-	}
+	producer("/hello", router)
 
 }
 
