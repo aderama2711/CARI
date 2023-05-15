@@ -28,7 +28,7 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
 		// fmt.Println(data.Content)
-		// content = string(data.Content[:])
+		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
 		thg = float64(len(content)) / float64(rtt/1000)
 	} else {
