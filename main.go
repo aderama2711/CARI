@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	openUplink()
 
 	var wg sync.WaitGroup
 

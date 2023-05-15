@@ -12,7 +12,6 @@ import (
 )
 
 func consumer(name string) (content string, rtt float64, thg float64, e error) {
-	openUplink()
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
@@ -41,7 +40,6 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 }
 
 func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg float64, e error) {
-	openUplink()
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
@@ -68,7 +66,6 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 }
 
 func update_facelist() {
-	openUplink()
 	c, _ := nfdmgmt.New()
 
 	var sigNonce [8]byte
@@ -97,7 +94,6 @@ func update_facelist() {
 }
 
 func register_route(name string, cost int, faceid int) {
-	openUplink()
 
 	c, _ := nfdmgmt.New()
 
