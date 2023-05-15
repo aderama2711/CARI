@@ -32,7 +32,7 @@ func consum_hello(delay int) {
 			register_route(v.tkn, 0, int(k))
 
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("/hello", ndn.ForwardingHint{ndn.ParseName(v.tkn)}))
+			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn)})
 
 			data, rtt, thg, e := consumer_interest(interest)
 
