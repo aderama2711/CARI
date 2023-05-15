@@ -36,6 +36,8 @@ func consum_hello(delay int) {
 	for {
 		//update facelist
 		update_facelist()
+		fmt.Println(facelist)
+
 		//create route
 		for k, v := range facelist {
 			register_route(v.tkn, 0, int(k))
@@ -49,6 +51,8 @@ func consum_hello(delay int) {
 			if e != nil {
 				continue
 			}
+
+			fmt.Println(data)
 
 			v.ngb = data
 			v.rtt = rtt
