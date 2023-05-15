@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	openUplink()
 
 	c, _ := nfdmgmt.New()
 
@@ -17,7 +18,7 @@ func main() {
 		Name:   ndn.ParseName("/"),
 		Origin: 0,
 		Cost:   0,
-		FaceId: 289,
+		FaceID: 289,
 	})
 
 	if e != nil {
