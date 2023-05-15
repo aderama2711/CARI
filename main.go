@@ -1,64 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func main() {
-	openUplink()
-
-	c, _ := nfdmgmt.New()
-
-	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
-		Name:   ndn.ParseName("/"),
-		Origin: 0,
-		Cost:   0,
-		FaceID: 289,
-	})
-
-	if e != nil {
-		fmt.Println(e)
-	}
-	if cr.StatusCode != 200 {
-		fmt.Println("unexpected response status %d", cr.StatusCode)
-	}
-
-	// var sigNonce [8]byte
-	// rand.Read(sigNonce[:])
-
-	// interest := ndn.Interest{
-	// 	Name:        ndn.ParseName("/localhost/nfd/faces/list"),
-	// 	MustBeFresh: true,
-	// 	CanBePrefix: true,
-	// 	SigInfo: &ndn.SigInfo{
-	// 		Nonce: sigNonce[:],
-	// 		Time:  uint64(time.Now().UnixMilli()),
-	// 	},
-	// }
-
-	// c.Signer.Sign(&interest)
-
-	// data, e := endpoint.Consume(context.Background(), interest,
-	// 	endpoint.ConsumerOptions{})
-
-	// if e != nil {
-	// 	fmt.Println(e)
-	// } else {
-	// 	parse_facelist(data.Content)
-	// }
 
 	// consumer("/ndn/coba")
 
 	// //Serve /hello interest
-	// go serve_hello("R1")
+	go serve_hello("R1")
 
 	// //hello protocol every 5 second
-	// go consum_hello(5)
+	go consum_hello(5)
 }
 
 func serve_hello(router string) {
@@ -68,7 +25,29 @@ func serve_hello(router string) {
 func consum_hello(delay int) {
 	interval := 5 * time.Second
 	for {
-		consumer("/hello")
+		//update facelist
+		update_facelist()
+		//create route
+		for k, v := range facelist {
+			register_route(v.tkn, 0, int(k))
+
+			//send hello interest to every face
+			interest := ndn.MakeInterest(ndn.ParseName("/hello", ndn.ForwardingHint{ndn.ParseName(v.tkn)}))
+
+			data, rtt, thg, e := consumer_interest(interest)
+
+			if e != nil {
+				continue
+			}
+
+			v.ngb = data
+			v.rtt = rtt
+			v.thg = thg
+			facelist[k] = v
+		}
+		fmt.Println(facelist)
+
 		time.Sleep(interval)
+
 	}
 }

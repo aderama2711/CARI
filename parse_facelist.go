@@ -57,7 +57,7 @@ func parse_facelist(raw []byte) {
 						length = check_length(raw[pointer : pointer+octet])
 					}
 					pointer += octet
-					faceid = get_faceid(raw[pointer : pointer+length])
+					faceid = get_data(raw[pointer : pointer+length])
 					fmt.Println("faceid: ", faceid)
 					pointer += length
 				} else if data == "92" {
@@ -70,7 +70,7 @@ func parse_facelist(raw []byte) {
 						length = check_length(raw[pointer : pointer+octet])
 					}
 					pointer += octet
-					outi = get_faceid(raw[pointer : pointer+length])
+					outi = get_data(raw[pointer : pointer+length])
 					fmt.Println("outi: ", outi)
 					pointer += length
 				} else if data == "97" {
@@ -83,7 +83,7 @@ func parse_facelist(raw []byte) {
 						length = check_length(raw[pointer : pointer+octet])
 					}
 					pointer += octet
-					innack = get_faceid(raw[pointer : pointer+length])
+					innack = get_data(raw[pointer : pointer+length])
 					fmt.Println("innack: ", innack)
 					pointer += length
 				} else {
@@ -141,7 +141,7 @@ func check_length(wire []byte) (res uint64) {
 	return res
 }
 
-func get_faceid(wire []byte) (res uint64) {
+func get_data(wire []byte) (res uint64) {
 	byte_length := len(wire)
 	if byte_length == 1 {
 		res = uint64(wire[0])
