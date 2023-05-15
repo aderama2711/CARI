@@ -1,10 +1,10 @@
 package main
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 )
 
 type faces struct {
@@ -95,10 +95,10 @@ func parse_facelist(raw []byte) {
 				}
 			}
 
-			token := make([]byte, 16)
-			rand.Read(token)
-			stoken := hex.EncodeToString(token)
-			stoken = "/" + stoken
+			// token := make([]byte, 16)
+			// rand.Read(token)
+			// stoken := hex.EncodeToString(token)
+			stoken := "/" + strconv.Itoa(int(faceid))
 			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				fmt.Println("Use existing")
