@@ -2,28 +2,38 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 )
 
 func main() {
-	facelist = make(map[uint64]faces)
 
-	var wg sync.WaitGroup
+	openUplink()
 
-	wg.Add(1)
+	go producer("/hello", "Halo")
 
-	// consumer("/ndn/coba")
+	interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName("/264")})
 
-	// //Serve /hello interest
-	go serve_hello("R1")
+	data, _, _, e := consumer_interest(interest)
 
-	// //hello protocol every 5 second
-	go consume_hello(5)
+	fmt.Println(data, e)
 
-	wg.Wait()
+	// facelist = make(map[uint64]faces)
+
+	// var wg sync.WaitGroup
+
+	// wg.Add(1)
+
+	// // consumer("/ndn/coba")
+
+	// // //Serve /hello interest
+	// go serve_hello("R1")
+
+	// // //hello protocol every 5 second
+	// go consume_hello(5)
+
+	// wg.Wait()
 }
 
 func serve_hello(router string) {
