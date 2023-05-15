@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	openUplink()
 	facelist = make(map[uint64]faces)
 
 	var wg sync.WaitGroup
@@ -28,11 +27,13 @@ func main() {
 }
 
 func serve_hello(router string) {
+	openUplink()
 	producer("/hello", router)
 
 }
 
 func consume_hello(delay time.Duration) {
+	openUplink()
 	interval := delay * time.Second
 	for {
 		//update facelist
