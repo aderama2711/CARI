@@ -2,37 +2,28 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 )
 
 func main() {
+	facelist = make(map[uint64]faces)
 
-	openUplink()
+	var wg sync.WaitGroup
 
-	go producer("/hello", "Halo")
+	wg.Add(1)
 
-	interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName("/1q2w3e4r5t")})
+	// consumer("/ndn/coba")
 
-	data, _, _, e := consumer_interest(interest)
+	// //Serve /hello interest
+	go serve_hello("R1")
 
-	fmt.Println(data, e)
-	// facelist = make(map[uint64]faces)
+	// //hello protocol every 5 second
+	go consume_hello(5)
 
-	// var wg sync.WaitGroup
-
-	// wg.Add(1)
-
-	// // consumer("/ndn/coba")
-
-	// // //Serve /hello interest
-	// go serve_hello("R1")
-
-	// // //hello protocol every 5 second
-	// go consume_hello(5)
-
-	// wg.Wait()
+	wg.Wait()
 }
 
 func serve_hello(router string) {
@@ -55,7 +46,7 @@ func consume_hello(delay time.Duration) {
 
 			fmt.Println(k, v.tkn)
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn)})
+			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("/hello")})
 
 			data, rtt, thg, e := consumer_interest(interest)
 
