@@ -20,7 +20,7 @@ type faces struct {
 
 var facelist map[uint64]faces
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
@@ -127,7 +127,7 @@ func parse_facelist(raw []byte) {
 			// token := make([]byte, 16)
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
-			stoken := "/" + RandStringBytes(5)
+			stoken := "/" + RandStringBytes(16)
 			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				fmt.Println("Use existing")
