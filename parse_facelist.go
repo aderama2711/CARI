@@ -127,7 +127,7 @@ func parse_facelist(raw []byte) {
 			// token := make([]byte, 16)
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
-			stoken := "/" + RandStringBytes(16)
+			stoken := "/" + RandStringBytes(5)
 			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				fmt.Println("Use existing")
