@@ -55,6 +55,7 @@ func parse_facelist(raw []byte) {
 		faceid   uint64
 		innack   uint64
 		outi     uint64
+		uri      string
 	)
 
 	pointer = 0
@@ -112,6 +113,20 @@ func parse_facelist(raw []byte) {
 					innack = get_data(raw[pointer : pointer+length])
 					// fmt.Println("innack: ", innack)
 					pointer += length
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "72" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					uri = get_str_data(raw[pointer : pointer+length])
+					fmt.Println(uri)
+					// fmt.Println("innack: ", innack)
+					pointer += length
 				} else {
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
@@ -129,12 +144,14 @@ func parse_facelist(raw []byte) {
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStringBytes(16)
 			fmt.Println(faceid)
-			if _, ok := facelist[faceid]; ok {
-				fmt.Println("Use existing")
-				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
-			} else {
-				fmt.Println("Create new")
-				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
+			if strings.Contains(uri, "udp") {
+				if _, ok := facelist[faceid]; ok {
+					fmt.Println("Use existing")
+					facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
+				} else {
+					fmt.Println("Create new")
+					facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
+				}
 			}
 
 		}
@@ -181,6 +198,21 @@ func get_data(wire []byte) (res uint64) {
 		res = uint64(binary.BigEndian.Uint32(wire))
 	} else {
 		res = binary.BigEndian.Uint64(wire)
+	}
+
+	return res
+}
+
+func get_str_data(wire []byte) (res string) {
+	byte_length := len(wire)
+	if byte_length == 1 {
+		res = string(wire[0])
+	} else if byte_length == 2 {
+		res = string(binary.BigEndian.Uint16(wire))
+	} else if byte_length == 4 {
+		res = string(binary.BigEndian.Uint32(wire))
+	} else {
+		res = string(binary.BigEndian.Uint64(wire))
 	}
 
 	return res
