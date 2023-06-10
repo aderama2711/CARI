@@ -204,8 +204,6 @@ func get_data(wire []byte) (res uint64) {
 }
 
 func get_str_data(wire []byte) (res string) {
-	fmt.Println(wire)
-
 	res = string(wire)
 
 	return res
