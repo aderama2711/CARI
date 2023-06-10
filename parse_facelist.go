@@ -205,12 +205,8 @@ func get_data(wire []byte) (res uint64) {
 
 func get_str_data(wire []byte) (res string) {
 	fmt.Println(wire)
-	raw, err := hex.DecodeString(string(wire[:]))
-	if err != nil {
-		fmt.Println(err)
-	}
 
-	res = string(raw)
+	res = string(wire)
 
 	return res
 }
