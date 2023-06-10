@@ -124,7 +124,7 @@ func parse_facelist(raw []byte) {
 					}
 					pointer += octet
 					uri = get_str_data(raw[pointer : pointer+length])
-					fmt.Println(uri)
+					fmt.Println("uri:", uri)
 					// fmt.Println("innack: ", innack)
 					pointer += length
 				} else {
@@ -204,16 +204,12 @@ func get_data(wire []byte) (res uint64) {
 }
 
 func get_str_data(wire []byte) (res string) {
-	byte_length := len(wire)
-	if byte_length == 1 {
-		res = string(wire[0])
-	} else if byte_length == 2 {
-		res = string(binary.BigEndian.Uint16(wire))
-	} else if byte_length == 4 {
-		res = string(binary.BigEndian.Uint32(wire))
-	} else {
-		res = string(binary.BigEndian.Uint64(wire))
+	raw, err := hex.DecodeString(string(wire[:]))
+	if err != nil {
+		fmt.Println(err)
 	}
+
+	res = string(raw)
 
 	return res
 }
