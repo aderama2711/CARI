@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 )
 
-func producer(name string, content string) {
+func producer(name string, content string, fresh int) {
 	payload := []byte(content)
 
 	var signer ndn.Signer
@@ -20,7 +21,7 @@ func producer(name string, content string) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
-				return ndn.MakeData(interest, payload), nil
+				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
 		})

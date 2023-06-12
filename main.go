@@ -28,7 +28,7 @@ func main() {
 
 func serve_hello(router string) {
 	openUplink()
-	producer("/hello", router)
+	producer("/hello", router, 10)
 
 }
 
