@@ -113,6 +113,19 @@ func parse_facelist(raw []byte) {
 					innack = get_data(raw[pointer : pointer+length])
 					// fmt.Println("innack: ", innack)
 					pointer += length
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "72" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					uri = get_str_data(raw[pointer : pointer+length])
+					// fmt.Println("innack: ", innack)
+					pointer += length
 				} else {
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
@@ -128,7 +141,7 @@ func parse_facelist(raw []byte) {
 			// token := make([]byte, 16)
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
-			stoken := RandStringBytes(16)
+			stoken := "/" + RandStringBytes(16)
 			fmt.Println(faceid)
 			if _, ok := facelist[faceid]; ok {
 				fmt.Println("Use existing")
@@ -137,7 +150,6 @@ func parse_facelist(raw []byte) {
 				fmt.Println("Create new")
 				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
 			}
-
 		}
 	}
 }

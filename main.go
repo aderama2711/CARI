@@ -28,12 +28,13 @@ func main() {
 
 func serve_hello(router string) {
 	openUplink()
-	producer("/hello", router, 10)
+	producer("hello", router, 10)
 }
 
 func consume_hello(delay time.Duration) {
 	openUplink()
 	interval := delay * time.Second
+	interval_interest := 50 * time.Millisecond
 	for {
 		//update facelist
 		update_facelist()
@@ -45,7 +46,7 @@ func consume_hello(delay time.Duration) {
 
 			fmt.Println(k, v.tkn)
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("/hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("/hello")})
+			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("hello")})
 
 			data, rtt, thg, e := consumer_interest(interest)
 
@@ -59,6 +60,8 @@ func consume_hello(delay time.Duration) {
 			v.rtt = rtt
 			v.thg = thg
 			facelist[k] = v
+
+			time.Sleep(interval_interest)
 		}
 		fmt.Println(facelist)
 
