@@ -48,7 +48,11 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	rtt = float64(time.Since(t0).Milliseconds())
+	raw_rtt := time.Since(t0)
+
+	rtt = float64(raw_rtt / time.Millisecond)
+
+	fmt.Println(rtt)
 
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
