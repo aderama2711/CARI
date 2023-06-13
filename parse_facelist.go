@@ -113,20 +113,6 @@ func parse_facelist(raw []byte) {
 					innack = get_data(raw[pointer : pointer+length])
 					// fmt.Println("innack: ", innack)
 					pointer += length
-				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "72" {
-					// fmt.Println("data:", data)
-					pointer++
-					octet := check_type([]byte{raw[pointer]})
-					if octet == 1 {
-						length = check_length([]byte{raw[pointer]})
-					} else {
-						length = check_length(raw[pointer : pointer+octet])
-					}
-					pointer += octet
-					uri = get_str_data(raw[pointer : pointer+length])
-					fmt.Println("uri:", uri)
-					// fmt.Println("innack: ", innack)
-					pointer += length
 				} else {
 					pointer++
 					octet := check_type([]byte{raw[pointer]})

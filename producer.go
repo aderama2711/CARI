@@ -17,8 +17,7 @@ func producer(name string, content string, fresh int) {
 	for {
 		ctx := context.Background()
 		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
+			Prefix: ndn.ParseName(name),
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
