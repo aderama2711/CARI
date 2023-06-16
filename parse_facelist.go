@@ -142,7 +142,7 @@ func parse_facelist(raw []byte) {
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStringBytes(16)
-			if strings.Contains(uri, "6363") {
+			if strings.Contains(uri, ":6363") {
 				if _, ok := facelist[faceid]; ok {
 					fmt.Println("Use existing")
 					facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
