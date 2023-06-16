@@ -27,12 +27,10 @@ func main() {
 }
 
 func serve_hello(router string) {
-	openUplink()
 	producer("hello", router, 10)
 }
 
 func consume_hello(delay time.Duration) {
-	openUplink()
 	interval := delay * time.Second
 	interval_interest := 50 * time.Millisecond
 	for {

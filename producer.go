@@ -10,6 +10,7 @@ import (
 )
 
 func producer(name string, content string, fresh int) {
+	openUplink()
 	payload := []byte(content)
 
 	var signer ndn.Signer
