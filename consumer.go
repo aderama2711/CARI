@@ -14,7 +14,6 @@ import (
 func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
-	openUplink()
 
 	interest := ndn.ParseName(name)
 
@@ -43,7 +42,6 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
-	openUplink()
 
 	t0 := time.Now()
 

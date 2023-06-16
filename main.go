@@ -18,12 +18,17 @@ func main() {
 	// consumer("/ndn/coba")
 
 	// //Serve /hello interest
-	go serve_hello("R1")
+	// go serve_hello("R1")
 
 	// //hello protocol every 5 second
-	go consume_hello(5)
+	// go consume_hello(5)
+
+	go producer("hello", "Hello World!", 10)
+
+	go consumer("hello")
 
 	wg.Wait()
+
 }
 
 func serve_hello(router string) {
