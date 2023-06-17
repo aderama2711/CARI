@@ -43,8 +43,6 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
-	client, e := nfdmgmt.New()
-
 	t0 := time.Now()
 
 	data, e := endpoint.Consume(context.Background(), Interest,
