@@ -27,6 +27,31 @@ func main() {
 	time.Sleep(1 * time.Second)
 
 	// //hello protocol every 5 second
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
+
+	client, e := nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		fmt.Println(e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		fmt.Println(e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
 	consume_hello(10)
 
 	// go producer("hello", "Hello World!", 10)
@@ -68,62 +93,12 @@ func main() {
 }
 
 func serve_hello(router string) {
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
 	producer("hello", router, 10)
 }
 
 func consume_hello(delay time.Duration) {
 	interval := delay * time.Second
 	interval_interest := 100 * time.Millisecond
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
 	for {
 		//update facelist
 		update_facelist()
