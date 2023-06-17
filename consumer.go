@@ -4,15 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
-	"github.com/usnistgov/ndn-dpdk/ndn/l3"
-	"github.com/usnistgov/ndn-dpdk/ndn/memiftransport"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
-	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/gqlmgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
@@ -48,38 +43,7 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e = nfdmgmt.New()
-
-	switch client := client.(type) {
-	case *gqlmgmt.Client:
-		var loc memiftransport.Locator
-		loc.Dataroom = mtuFlag
-		face, e := client.OpenMemif(loc)
-	default:
-		face, e := client.OpenFace()
-	}
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+	client, e := nfdmgmt.New()
 
 	t0 := time.Now()
 
