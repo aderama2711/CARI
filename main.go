@@ -27,7 +27,7 @@ func main() {
 	time.Sleep(1 * time.Second)
 
 	// //hello protocol every 5 second
-	go consume_hello(10)
+	consume_hello(10)
 
 	// go producer("hello", "Hello World!", 10)
 
