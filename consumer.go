@@ -10,7 +10,9 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/l3"
+	"github.com/usnistgov/ndn-dpdk/ndn/memiftransport"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/gqlmgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
@@ -54,7 +56,14 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 
 	client, e = nfdmgmt.New()
 
-	face, e = client.OpenFace()
+	switch client := client.(type) {
+	case *gqlmgmt.Client:
+		var loc memiftransport.Locator
+		loc.Dataroom = mtuFlag
+		face, e := client.OpenMemif(loc)
+	default:
+		face, e := client.OpenFace()
+	}
 	if e != nil {
 		fmt.Println(e)
 	}
@@ -99,31 +108,7 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 }
 
 func update_facelist() {
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+	c, _ := nfdmgmt.New()
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
@@ -138,7 +123,7 @@ func update_facelist() {
 		},
 	}
 
-	client.Signer.Sign(&interest)
+	c.Signer.Sign(&interest)
 
 	data, e := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
@@ -148,39 +133,13 @@ func update_facelist() {
 	} else {
 		parse_facelist(data.Content)
 	}
-
-	fwFace.Close()
 }
 
 func register_route(name string, cost int, faceid int) {
 
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
+	c, _ := nfdmgmt.New()
 
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	cr, e := client.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
+	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
 		Name:   ndn.ParseName(name),
 		Origin: 0,
 		Cost:   cost,
