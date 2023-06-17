@@ -72,7 +72,7 @@ func main() {
 
 			fmt.Println(k, v.tkn)
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("hello")})
+			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("hello")}, ndn.ForwardingHint.tMustBeFresh{true})
 
 			data, rtt, thg, e := consumer_interest(interest)
 
