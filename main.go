@@ -25,6 +25,8 @@ func main() {
 
 	go producer("hello", "Hello World!", 10)
 
+	time.Sleep(1 * time.Second)
+
 	data, _, _, e := consumer("hello")
 	fmt.Println(data)
 	fmt.Println(e)
