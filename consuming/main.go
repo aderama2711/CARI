@@ -18,8 +18,10 @@ import (
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
+var facelist map[uint64]faces
+
 func main() {
-	facelist := make(map[uint64]faces)
+	facelist = make(map[uint64]faces)
 
 	var wg sync.WaitGroup
 
@@ -245,8 +247,6 @@ type faces struct {
 	n_oi uint64
 	n_in uint64
 }
-
-var facelist map[uint64]faces
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyz"
 const (
