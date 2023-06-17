@@ -97,6 +97,7 @@ func consume_hello(delay time.Duration) {
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
+
 	interval := delay * time.Second
 	interval_interest := 50 * time.Millisecond
 	for {
