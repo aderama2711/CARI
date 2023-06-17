@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/l3"
+	"github.com/usnistgov/ndn-dpdk/ndn/mgmt"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
@@ -43,6 +46,32 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
+
+	client, e = nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		fmt.Println(e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		fmt.Println(e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
+
 	t0 := time.Now()
 
 	data, e := endpoint.Consume(context.Background(), Interest,
@@ -70,7 +99,31 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 }
 
 func update_facelist() {
-	c, _ := nfdmgmt.New()
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
+
+	client, e := nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		fmt.Println(e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		fmt.Println(e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
 
 	var sigNonce [8]byte
 	rand.Read(sigNonce[:])
@@ -85,7 +138,7 @@ func update_facelist() {
 		},
 	}
 
-	c.Signer.Sign(&interest)
+	client.Signer.Sign(&interest)
 
 	data, e := endpoint.Consume(context.Background(), interest,
 		endpoint.ConsumerOptions{})
@@ -95,13 +148,39 @@ func update_facelist() {
 	} else {
 		parse_facelist(data.Content)
 	}
+
+	fwFace.Close()
 }
 
 func register_route(name string, cost int, faceid int) {
 
-	c, _ := nfdmgmt.New()
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
 
-	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
+	client, e := nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		fmt.Println(e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		fmt.Println(e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
+
+	cr, e := client.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
 		Name:   ndn.ParseName(name),
 		Origin: 0,
 		Cost:   cost,
