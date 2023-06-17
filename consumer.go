@@ -8,12 +8,21 @@ import (
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
+	"github.com/usnistgov/ndn-dpdk/ndn/l3"
 	"github.com/usnistgov/ndn-dpdk/ndn/mgmt/nfdmgmt"
 )
 
 func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
+
+	client, e := nfdmgmt.New()
+	face, e = client.OpenFace()
+	l3face := face.Face()
+	fw := l3.GetDefaultForwarder()
+	fwFace, e = fw.AddFace(l3face)
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
 
 	interest := ndn.ParseName(name)
 
