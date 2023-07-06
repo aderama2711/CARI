@@ -19,7 +19,6 @@ import (
 )
 
 var facelist map[uint64]faces
-var count int
 
 func main() {
 	facelist = make(map[uint64]faces)
@@ -32,10 +31,6 @@ func main() {
 
 	// //Serve /hello interest
 	time.Sleep(1 * time.Second)
-
-	count++
-
-	go producer("/testing", string(count), 10)
 
 	// //hello protocol every 5 second
 	var (
@@ -95,6 +90,27 @@ func main() {
 		}
 		fmt.Println(facelist)
 
+		//request route info
+		for k, v := range facelist {
+
+			fmt.Println(k, v.tkn)
+
+			//request route info interest to every face
+			interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("info")})
+			interest.MustBeFresh = true
+
+			data, _, _, e := consumer_interest(interest)
+
+			if e != nil {
+				continue
+			}
+
+			fmt.Println(data)
+
+			//TODO: Insert neighbor data to graph for calculating the route
+
+		}
+
 		time.Sleep(interval)
 	}
 
@@ -128,58 +144,6 @@ func consumer(name string) (content string, rtt float64, thg float64, e error) {
 	}
 
 	return content, rtt, thg, nil
-}
-
-func producer(name string, content string, fresh int) {
-	payload := []byte(content)
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	var signer ndn.Signer
-
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// fmt.Println(interest)
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
-
-		if e != nil {
-			fmt.Println(e)
-		}
-
-		<-ctx.Done()
-		defer p.Close()
-	}
-
 }
 
 func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg float64, e error) {
