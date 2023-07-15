@@ -45,7 +45,7 @@ func main() {
 	// time.Sleep(1 * time.Second)
 
 	go hello()
-
+	go producer_facelist("/facelist", 100)
 	wg.Wait()
 
 }
