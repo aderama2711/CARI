@@ -70,6 +70,7 @@ func hello(fl chan map[uint64]faces) {
 	fw.AddReadvertiseDestination(face)
 
 	log.Printf("uplink opened, state is %s", l3face.State())
+	log.Printf("hello")
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
@@ -313,6 +314,7 @@ func producer_channel(name string, c chan map[uint64]faces, fresh int) {
 	fw.AddReadvertiseDestination(face)
 
 	log.Printf("uplink opened, state is %s", l3face.State())
+	log.Printf("hello")
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
