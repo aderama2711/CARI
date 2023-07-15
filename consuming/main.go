@@ -20,12 +20,12 @@ import (
 )
 
 type faces struct {
-	ngb  string
-	rtt  float64
-	thg  float64
-	tkn  string
-	n_oi uint64
-	n_in uint64
+	ngb  string  `json:"ngb"`
+	rtt  float64 `json:"rtt"`
+	thg  float64 `json:"thg"`
+	tkn  string  `json:"tkn"`
+	n_oi uint64  `json:"n_oi"`
+	n_in uint64  `json:"n_in"`
 }
 
 var facelist map[uint64]faces
