@@ -240,7 +240,12 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg 
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		Thg = float64(len(content)) / float64(Rtt/1000)
+		if Rtt != 0 {
+			Thg = float64(len(content)) / float64(Rtt/1000)
+		} else {
+			Thg = 0
+		}
+
 	} else {
 		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
