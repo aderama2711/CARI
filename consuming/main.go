@@ -52,8 +52,6 @@ func hello(fl chan map[uint64]faces) {
 		fwFace l3.FwFace
 	)
 
-	facelist := <-fl
-
 	client, e := nfdmgmt.New()
 
 	face, e = client.OpenFace()
@@ -77,6 +75,7 @@ func hello(fl chan map[uint64]faces) {
 
 	interval := 10 * time.Second
 	for {
+		facelist := make(map[uint64]faces)
 		//update facelist
 		c, _ := nfdmgmt.New()
 
@@ -314,7 +313,7 @@ func producer_channel(name string, c chan map[uint64]faces, fresh int) {
 	fw.AddReadvertiseDestination(face)
 
 	log.Printf("uplink opened, state is %s", l3face.State())
-	log.Printf("hello")
+	log.Printf("prod")
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
