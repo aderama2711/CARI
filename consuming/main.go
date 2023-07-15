@@ -31,14 +31,23 @@ type faces struct {
 // var facelist map[uint64]faces
 
 func main() {
-	fl := make(chan map[uint64]faces, 128)
+	fl := make(chan map[uint64]faces)
+	pfl := make(chan map[uint64]faces)
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 
 	go hello(fl)
-	go producer_channel("/facelist", fl, 1000)
+	go producer_channel("/facelist", pfl, 1000)
+
+	for {
+		select {
+		case data := <-fl:
+			fmt.Println(data)
+			pfl <- data
+		}
+	}
 
 	wg.Wait()
 
