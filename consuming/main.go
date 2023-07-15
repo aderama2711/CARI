@@ -201,9 +201,7 @@ func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
-				mutex.Lock()
 				content, err := json.Marshal(facelist)
-				mutex.Unlock()
 				if err != nil {
 					log.Printf(err.Error())
 				}
