@@ -28,32 +28,29 @@ type faces struct {
 	n_in uint64
 }
 
-// var facelist map[uint64]faces
+var facelist map[uint64]faces
+
+var mutex sync.Mutex
 
 func main() {
-	fl := make(chan map[uint64]faces)
-	pfl := make(chan map[uint64]faces)
+	facelist = make(map[uint64]faces)
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 
-	go hello(fl)
-	go producer_channel("/facelist", pfl, 1000)
+	// consumer("/ndn/coba")
 
-	for {
-		select {
-		case data := <-fl:
-			fmt.Println(data)
-			pfl <- data
-		}
-	}
+	// //Serve /hello interest
+	// time.Sleep(1 * time.Second)
+
+	go hello()
 
 	wg.Wait()
 
 }
 
-func hello(fl chan map[uint64]faces) {
+func hello() {
 	// //hello protocol every 5 second
 	var (
 		client mgmt.Client
@@ -77,148 +74,18 @@ func hello(fl chan map[uint64]faces) {
 	fw.AddReadvertiseDestination(face)
 
 	log.Printf("uplink opened, state is %s", l3face.State())
-	log.Printf("hello")
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
-	facelist := make(map[uint64]faces)
-
 	interval := 10 * time.Second
 	for {
 		//update facelist
-		c, _ := nfdmgmt.New()
-
-		var sigNonce [8]byte
-		rand.Read(sigNonce[:])
-
-		interest := ndn.Interest{
-			Name:        ndn.ParseName("/localhost/nfd/faces/list"),
-			MustBeFresh: true,
-			CanBePrefix: true,
-			SigInfo: &ndn.SigInfo{
-				Nonce: sigNonce[:],
-				Time:  uint64(time.Now().UnixMilli()),
-			},
-		}
-
-		c.Signer.Sign(&interest)
-
-		data, e := endpoint.Consume(context.Background(), interest,
-			endpoint.ConsumerOptions{})
-
-		if e != nil {
-			fmt.Println(e)
-		} else {
-			// parse_facelist(data.Content)
-			var (
-				nextface uint64
-				length   uint64
-				pointer  uint64
-				faceid   uint64
-				innack   uint64
-				outi     uint64
-				uri      string
-			)
-
-			pointer = 0
-			for pointer != uint64(len(data.Content)) {
-				// check per face
-				if header := hex.EncodeToString([]byte{data.Content[pointer]}); header == "80" {
-					pointer++
-					// fmt.Println("header:", header)
-					octet := check_type([]byte{data.Content[pointer]})
-					if octet == 1 {
-						length = check_length([]byte{data.Content[pointer]})
-					} else {
-						length = check_length(data.Content[pointer : pointer+octet])
-					}
-					pointer += octet
-					nextface = pointer + length
-
-					for pointer < nextface {
-						if header := hex.EncodeToString([]byte{data.Content[pointer]}); header == "69" {
-							// fmt.Println("header:", header)
-							pointer++
-							octet := check_type([]byte{data.Content[pointer]})
-							if octet == 1 {
-								length = check_length([]byte{data.Content[pointer]})
-							} else {
-								length = check_length(data.Content[pointer : pointer+octet])
-							}
-							pointer += octet
-							faceid = get_data(data.Content[pointer : pointer+length])
-							// fmt.Println("faceid: ", faceid)
-							pointer += length
-						} else if header := hex.EncodeToString([]byte{data.Content[pointer]}); header == "92" {
-							// fmt.Println("header:", header)
-							pointer++
-							octet := check_type([]byte{data.Content[pointer]})
-							if octet == 1 {
-								length = check_length([]byte{data.Content[pointer]})
-							} else {
-								length = check_length(data.Content[pointer : pointer+octet])
-							}
-							pointer += octet
-							outi = get_data(data.Content[pointer : pointer+length])
-							// fmt.Println("outi: ", outi)
-							pointer += length
-						} else if header := hex.EncodeToString([]byte{data.Content[pointer]}); header == "97" {
-							// fmt.Println("data:", data)
-							pointer++
-							octet := check_type([]byte{data.Content[pointer]})
-							if octet == 1 {
-								length = check_length([]byte{data.Content[pointer]})
-							} else {
-								length = check_length(data.Content[pointer : pointer+octet])
-							}
-							pointer += octet
-							innack = get_data(data.Content[pointer : pointer+length])
-							// fmt.Println("innack: ", innack)
-							pointer += length
-						} else if header := hex.EncodeToString([]byte{data.Content[pointer]}); header == "72" {
-							// fmt.Println("data:", data)
-							pointer++
-							octet := check_type([]byte{data.Content[pointer]})
-							if octet == 1 {
-								length = check_length([]byte{data.Content[pointer]})
-							} else {
-								length = check_length(data.Content[pointer : pointer+octet])
-							}
-							pointer += octet
-							uri = get_str_data(data.Content[pointer : pointer+length])
-							// fmt.Println("innack: ", innack)
-							pointer += length
-						} else {
-							pointer++
-							octet := check_type([]byte{data.Content[pointer]})
-							if octet == 1 {
-								length = check_length([]byte{data.Content[pointer]})
-							} else {
-								length = check_length(data.Content[pointer : pointer+octet])
-							}
-							pointer += octet + length
-						}
-					}
-
-					// token := make([]byte, 16)
-					// rand.Read(token)
-					// stoken := hex.EncodeToString(token)
-					stoken := "/" + RandStringBytes(16)
-					fmt.Println(uri)
-					if _, ok := facelist[faceid]; ok {
-						fmt.Println("Use existing")
-						facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
-					} else {
-						fmt.Println("Create new")
-						facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
-					}
-
-				}
-			}
-		}
+		update_facelist()
+		fmt.Println(facelist)
 
 		//create route
+		mutex.Lock()
 		for k, v := range facelist {
 			register_route(v.tkn, 0, int(k))
 
@@ -242,8 +109,7 @@ func hello(fl chan map[uint64]faces) {
 
 		}
 		fmt.Println(facelist)
-
-		fl <- facelist
+		mutex.Unlock()
 
 		time.Sleep(interval)
 	}
@@ -300,7 +166,7 @@ func producer(name string, content string, fresh int) {
 	}
 }
 
-func producer_channel(name string, channel chan map[uint64]faces, fresh int) {
+func producer_facelist(name string, fresh int) {
 	var (
 		client mgmt.Client
 		face   mgmt.Face
@@ -323,7 +189,6 @@ func producer_channel(name string, channel chan map[uint64]faces, fresh int) {
 	fw.AddReadvertiseDestination(face)
 
 	log.Printf("uplink opened, state is %s", l3face.State())
-	log.Printf("prod")
 	l3face.OnStateChange(func(st l3.TransportState) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
@@ -337,15 +202,13 @@ func producer_channel(name string, channel chan map[uint64]faces, fresh int) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
-				content := <-channel
-				jsonStr, err := json.Marshal(content)
+				mutex.Lock()
+				content, err := json.Marshal(facelist)
 				if err != nil {
-					fmt.Println(err)
+					log.Printf(err.Error())
 				}
-
-				payload := []byte(jsonStr)
-				fmt.Println("Producer receive")
-				fmt.Println(payload)
+				mutex.Unlock()
+				payload := []byte(content)
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
@@ -388,6 +251,34 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	}
 
 	return content, rtt, thg, nil
+}
+
+func update_facelist() {
+	c, _ := nfdmgmt.New()
+
+	var sigNonce [8]byte
+	rand.Read(sigNonce[:])
+
+	interest := ndn.Interest{
+		Name:        ndn.ParseName("/localhost/nfd/faces/list"),
+		MustBeFresh: true,
+		CanBePrefix: true,
+		SigInfo: &ndn.SigInfo{
+			Nonce: sigNonce[:],
+			Time:  uint64(time.Now().UnixMilli()),
+		},
+	}
+
+	c.Signer.Sign(&interest)
+
+	data, e := endpoint.Consume(context.Background(), interest,
+		endpoint.ConsumerOptions{})
+
+	if e != nil {
+		fmt.Println(e)
+	} else {
+		parse_facelist(data.Content)
+	}
 }
 
 func register_route(name string, cost int, faceid int) {
@@ -436,6 +327,115 @@ func RandStringBytes(n int) string {
 	}
 
 	return sb.String()
+}
+
+func parse_facelist(raw []byte) {
+	var (
+		nextface uint64
+		length   uint64
+		pointer  uint64
+		faceid   uint64
+		innack   uint64
+		outi     uint64
+		uri      string
+	)
+
+	pointer = 0
+	for pointer != uint64(len(raw)) {
+		// check per face
+		if data := hex.EncodeToString([]byte{raw[pointer]}); data == "80" {
+			pointer++
+			// fmt.Println("data:", data)
+			octet := check_type([]byte{raw[pointer]})
+			if octet == 1 {
+				length = check_length([]byte{raw[pointer]})
+			} else {
+				length = check_length(raw[pointer : pointer+octet])
+			}
+			pointer += octet
+			nextface = pointer + length
+
+			for pointer < nextface {
+				if data := hex.EncodeToString([]byte{raw[pointer]}); data == "69" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					faceid = get_data(raw[pointer : pointer+length])
+					// fmt.Println("faceid: ", faceid)
+					pointer += length
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "92" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					outi = get_data(raw[pointer : pointer+length])
+					// fmt.Println("outi: ", outi)
+					pointer += length
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "97" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					innack = get_data(raw[pointer : pointer+length])
+					// fmt.Println("innack: ", innack)
+					pointer += length
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "72" {
+					// fmt.Println("data:", data)
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet
+					uri = get_str_data(raw[pointer : pointer+length])
+					// fmt.Println("innack: ", innack)
+					pointer += length
+				} else {
+					pointer++
+					octet := check_type([]byte{raw[pointer]})
+					if octet == 1 {
+						length = check_length([]byte{raw[pointer]})
+					} else {
+						length = check_length(raw[pointer : pointer+octet])
+					}
+					pointer += octet + length
+				}
+			}
+
+			// token := make([]byte, 16)
+			// rand.Read(token)
+			// stoken := hex.EncodeToString(token)
+			stoken := "/" + RandStringBytes(16)
+			fmt.Println(uri)
+			mutex.Lock()
+			if _, ok := facelist[faceid]; ok {
+				fmt.Println("Use existing")
+				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
+			} else {
+				fmt.Println("Create new")
+				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
+			}
+			mutex.Unlock()
+		}
+	}
 }
 
 func check_type(wire []byte) (res uint64) {
