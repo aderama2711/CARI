@@ -300,7 +300,7 @@ func producer(name string, content string, fresh int) {
 	}
 }
 
-func producer_channel(name string, c chan map[uint64]faces, fresh int) {
+func producer_channel(name string, channel chan map[uint64]faces, fresh int) {
 	var (
 		client mgmt.Client
 		face   mgmt.Face
@@ -337,13 +337,15 @@ func producer_channel(name string, c chan map[uint64]faces, fresh int) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
-				content := <-c
+				content := <-channel
 				jsonStr, err := json.Marshal(content)
 				if err != nil {
 					fmt.Println(err)
 				}
 
 				payload := []byte(jsonStr)
+				fmt.Println("Producer receive")
+				fmt.Println(payload)
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
