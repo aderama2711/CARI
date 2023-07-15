@@ -20,12 +20,12 @@ import (
 )
 
 type faces struct {
-	ngb  string  `json:"ngb"`
-	rtt  float64 `json:"rtt"`
-	thg  float64 `json:"thg"`
-	tkn  string  `json:"tkn"`
-	n_oi uint64  `json:"n_oi"`
-	n_in uint64  `json:"n_in"`
+	Ngb  string  `json:"Ngb"`
+	Rtt  float64 `json:"Rtt"`
+	Thg  float64 `json:"Thg"`
+	Tkn  string  `json:"Tkn"`
+	N_oi uint64  `json:"N_oi"`
+	N_in uint64  `json:"N_in"`
 }
 
 var facelist map[uint64]faces
@@ -87,14 +87,14 @@ func hello(wg *sync.WaitGroup) {
 
 		//create route
 		for k, v := range facelist {
-			register_route(v.tkn, 0, int(k))
+			register_route(v.Tkn, 0, int(k))
 
-			fmt.Println(k, v.tkn)
+			fmt.Println(k, v.Tkn)
 			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.tkn), ndn.ParseName("hello")})
+			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
 			interest.MustBeFresh = true
 
-			data, rtt, thg, e := consumer_interest(interest)
+			data, Rtt, Thg, e := consumer_interest(interest)
 
 			if e != nil {
 				continue
@@ -102,9 +102,9 @@ func hello(wg *sync.WaitGroup) {
 
 			fmt.Println(data)
 
-			v.ngb = data
-			v.rtt = rtt
-			v.thg = thg
+			v.Ngb = data
+			v.Rtt = Rtt
+			v.Thg = Thg
 			facelist[k] = v
 
 		}
@@ -220,7 +220,7 @@ func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
 	}
 }
 
-func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg float64, e error) {
+func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
@@ -229,25 +229,25 @@ func consumer_interest(Interest ndn.Interest) (content string, rtt float64, thg 
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	raw_rtt := time.Since(t0)
+	raw_Rtt := time.Since(t0)
 
-	rtt = float64(raw_rtt / time.Millisecond)
+	Rtt = float64(raw_Rtt / time.Millisecond)
 
-	fmt.Println(rtt)
+	fmt.Println(Rtt)
 
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		thg = float64(len(content)) / float64(rtt/1000)
+		Thg = float64(len(content)) / float64(Rtt/1000)
 	} else {
 		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
 		return content, 0, 0, e
 	}
 
-	return content, rtt, thg, nil
+	return content, Rtt, Thg, nil
 }
 
 func update_facelist() {
@@ -306,7 +306,7 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
-func RandStringBytes(n int) string {
+func RandStriNgbytes(n int) string {
 	var src = rand.NewSource(time.Now().UnixNano())
 	sb := strings.Builder{}
 	sb.Grow(n)
@@ -420,15 +420,15 @@ func parse_facelist(raw []byte) {
 			// token := make([]byte, 16)
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
-			stoken := "/" + RandStringBytes(16)
+			stoken := "/" + RandStriNgbytes(16)
 			fmt.Println(uri)
 			mutex.Lock()
 			if _, ok := facelist[faceid]; ok {
 				fmt.Println("Use existing")
-				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: facelist[faceid].tkn, ngb: facelist[faceid].ngb, rtt: facelist[faceid].rtt, thg: facelist[faceid].thg}
+				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
 			} else {
 				fmt.Println("Create new")
-				facelist[faceid] = faces{n_oi: outi, n_in: innack, tkn: stoken}
+				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
 			}
 			mutex.Unlock()
 		}
