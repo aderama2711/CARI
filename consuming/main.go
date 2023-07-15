@@ -85,7 +85,6 @@ func hello(wg *sync.WaitGroup) {
 		update_facelist()
 		fmt.Println(facelist)
 
-		mutex.Lock()
 		//create route
 		for k, v := range facelist {
 			register_route(v.tkn, 0, int(k))
@@ -110,7 +109,6 @@ func hello(wg *sync.WaitGroup) {
 
 		}
 		fmt.Println(facelist)
-		mutex.Unlock()
 		time.Sleep(interval)
 	}
 }
