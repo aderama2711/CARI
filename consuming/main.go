@@ -37,21 +37,22 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
+	wg.Add(2)
 
 	// consumer("/ndn/coba")
 
 	// //Serve /hello interest
 	// time.Sleep(1 * time.Second)
 
-	go hello()
-	go producer_facelist("/facelist", 100)
+	go hello(&wg)
+	go producer_facelist("/facelist", 100, &wg)
 	wg.Wait()
 
 }
 
-func hello() {
+func hello(wg *sync.WaitGroup) {
 	// //hello protocol every 5 second
+	defer wg.Done()
 	var (
 		client mgmt.Client
 		face   mgmt.Face
@@ -85,7 +86,6 @@ func hello() {
 		fmt.Println(facelist)
 
 		//create route
-		mutex.Lock()
 		for k, v := range facelist {
 			register_route(v.tkn, 0, int(k))
 
@@ -109,7 +109,6 @@ func hello() {
 
 		}
 		fmt.Println(facelist)
-		mutex.Unlock()
 
 		time.Sleep(interval)
 	}
@@ -166,7 +165,8 @@ func producer(name string, content string, fresh int) {
 	}
 }
 
-func producer_facelist(name string, fresh int) {
+func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	var (
 		client mgmt.Client
 		face   mgmt.Face
@@ -202,12 +202,10 @@ func producer_facelist(name string, fresh int) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// fmt.Println(interest)
-				mutex.Lock()
 				content, err := json.Marshal(facelist)
 				if err != nil {
 					log.Printf(err.Error())
 				}
-				mutex.Unlock()
 				payload := []byte(content)
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
