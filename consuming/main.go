@@ -205,7 +205,7 @@ func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
 				if err != nil {
 					log.Printf(err.Error())
 				}
-				payload := []byte(content)
+				payload := []byte(string(content))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
