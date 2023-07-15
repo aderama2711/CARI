@@ -73,9 +73,10 @@ func hello(fl chan map[uint64]faces) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
+	facelist := make(map[uint64]faces)
+
 	interval := 10 * time.Second
 	for {
-		facelist := make(map[uint64]faces)
 		//update facelist
 		c, _ := nfdmgmt.New()
 
