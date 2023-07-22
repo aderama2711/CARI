@@ -46,6 +46,7 @@ func main() {
 
 	go hello(&wg)
 	go producer_facelist("/facelist", 100, &wg)
+	go producer_update("/update", 100, &wg)
 	wg.Wait()
 
 }
@@ -113,56 +114,57 @@ func hello(wg *sync.WaitGroup) {
 	}
 }
 
-func producer(name string, content string, fresh int) {
-	payload := []byte(content)
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
+// Commented for "future use"
+// func producer(name string, content string, fresh int) {
+// 	payload := []byte(content)
+// 	var (
+// 		client mgmt.Client
+// 		face   mgmt.Face
+// 		fwFace l3.FwFace
+// 	)
 
-	client, e := nfdmgmt.New()
+// 	client, e := nfdmgmt.New()
 
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
+// 	face, e = client.OpenFace()
+// 	if e != nil {
+// 		fmt.Println(e)
+// 	}
+// 	l3face := face.Face()
 
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
+// 	fw := l3.GetDefaultForwarder()
+// 	if fwFace, e = fw.AddFace(l3face); e != nil {
+// 		fmt.Println(e)
+// 	}
+// 	fwFace.AddRoute(ndn.Name{})
+// 	fw.AddReadvertiseDestination(face)
 
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+// 	log.Printf("uplink opened, state is %s", l3face.State())
+// 	l3face.OnStateChange(func(st l3.TransportState) {
+// 		log.Printf("uplink state changes to %s", l3face.State())
+// 	})
 
-	var signer ndn.Signer
+// 	var signer ndn.Signer
 
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// fmt.Println(interest)
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
+// 	for {
+// 		ctx := context.Background()
+// 		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+// 			Prefix:      ndn.ParseName(name),
+// 			NoAdvertise: false,
+// 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+// 				// fmt.Println(interest)
+// 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
+// 			},
+// 			DataSigner: signer,
+// 		})
 
-		if e != nil {
-			fmt.Println(e)
-		}
+// 		if e != nil {
+// 			fmt.Println(e)
+// 		}
 
-		<-ctx.Done()
-		defer p.Close()
-	}
-}
+// 		<-ctx.Done()
+// 		defer p.Close()
+// 	}
+// }
 
 func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -206,6 +208,59 @@ func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
 					log.Printf(err.Error())
 				}
 				payload := []byte(string(content))
+				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
+			},
+			DataSigner: signer,
+		})
+
+		if e != nil {
+			fmt.Println(e)
+		}
+
+		<-ctx.Done()
+		defer p.Close()
+	}
+}
+
+func producer_update(name string, fresh int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
+
+	client, e := nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		fmt.Println(e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		fmt.Println(e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
+
+	var signer ndn.Signer
+
+	for {
+		ctx := context.Background()
+		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+			Prefix:      ndn.ParseName(name),
+			NoAdvertise: false,
+			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+				// Get App Param
+				fmt.Printf(interest.AppParameters)
+				payload := []byte(string("Ok"))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
