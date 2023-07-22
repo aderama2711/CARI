@@ -259,8 +259,8 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// Get App Param
-				fmt.Printf(hex.EncodeToString(interest.AppParameters))
-				payload := []byte(string("Ok"))
+				log.Println("Payload = "string(hex.EncodeToString(interest.AppParameters)))
+				payload := []byte(string(hex.EncodeToString(interest.AppParameters)))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
