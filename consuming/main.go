@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	b64 "encoding/base64"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
@@ -259,8 +260,8 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 			NoAdvertise: false,
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// Get App Param
-				log.Println("Payload = "string(hex.EncodeToString(interest.AppParameters)))
-				payload := []byte(string(hex.EncodeToString(interest.AppParameters)))
+				log.Println("Payload = " + string(b64.StdEncoding.EncodeToString(interest.AppParameters)))
+				payload := []byte(string(b64.StdEncoding.EncodeToString(interest.AppParameters)))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
 			DataSigner: signer,
