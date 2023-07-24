@@ -261,7 +261,7 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
 				// Get App Param
 				log.Println("Payload = " + string(interest.AppParameters))
-				splits = strings.Split(string(interest.AppParameters), ",")
+				splits := strings.Split(string(interest.AppParameters), ",")
 				cost, _ := strconv.Atoi(splits[1])
 				face, _ := strconv.Atoi(splits[2])
 				register_route(splits[0], cost, face)

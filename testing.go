@@ -2,13 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/binary"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
-	"strings"
 	"sync"
 	"time"
 	b64 "encoding/base64"
@@ -75,7 +70,7 @@ func main() {
 	// Testing facelist
 	interest := ndn.MakeInterest(ndn.ParseName("hello"))
 
-	data, _, _, err := consumer_interest(interest)
+	data, _, _, err = consumer_interest(interest)
 	fmt.Println(data)
 	fmt.Println(err)
 
@@ -84,7 +79,7 @@ func main() {
 	interest.MustBeFresh = true
 	interest.UpdateParamsDigest() //Update SHA256 params
 
-	data, _, _, err := consumer_interest(interest)
+	data, _, _, err = consumer_interest(interest)
 	fmt.Println(data)
 	fmt.Println(err)
 
