@@ -80,7 +80,7 @@ func main() {
 	fmt.Println(err)
 
 	// Testing update route
-	interest := ndn.MakeInterest(ndn.ParseName("update"), []byte("testing"))
+	interest := ndn.MakeInterest(ndn.ParseName("update"), []byte("/coba,10,255"))
 	interest.MustBeFresh = true
 	interest.UpdateParamsDigest() //Update SHA256 params
 

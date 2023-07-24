@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"strconv"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
@@ -261,7 +262,9 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 				// Get App Param
 				log.Println("Payload = " + string(interest.AppParameters))
 				splits = strings.Split(string(interest.AppParameters), ",")
-				register_route(splits[0], splits[1], splits[2])
+				cost, _ := strconv.Atoi(splits[1])
+				face, _ := strconv.Atoi(splits[2])
+				register_route(splits[0], cost, face)
 				payload := []byte(string(interest.AppParameters))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
