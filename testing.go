@@ -65,6 +65,21 @@ func main() {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
+	// Testing hello
+	interest := ndn.MakeInterest(ndn.ParseName("hello"))
+
+	data, _, _, err := consumer_interest(interest)
+	fmt.Println(data)
+	fmt.Println(err)
+
+	// Testing facelist
+	interest := ndn.MakeInterest(ndn.ParseName("hello"))
+
+	data, _, _, err := consumer_interest(interest)
+	fmt.Println(data)
+	fmt.Println(err)
+
+	// Testing update route
 	interest := ndn.MakeInterest(ndn.ParseName("update"), []byte("testing"))
 	interest.MustBeFresh = true
 	interest.UpdateParamsDigest() //Update SHA256 params
