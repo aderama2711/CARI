@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"strconv"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
@@ -21,7 +22,7 @@ import (
 )
 
 type faces struct {
-	Ngb  string  `json:"Ngb"`
+	Ngb  int     `json:"Ngb"`
 	Rtt  float64 `json:"Rtt"`
 	Thg  float64 `json:"Thg"`
 	Tkn  string  `json:"Tkn"`
@@ -38,21 +39,21 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(3)
 
-	// consumer("/ndn/coba")
+	// consumer for hello procedure (to neighbor)
+	go consumer_hello(&wg)
 
-	// //Serve /hello interest
-	// time.Sleep(1 * time.Second)
+	// producer for neighbor info (for controller)
+	go producer_info("/info", 100, &wg)
 
-	go hello(&wg)
-	go producer_facelist("/facelist", 100, &wg)
+	// producer for route update (for controller)
 	go producer_update("/update", 100, &wg)
 	wg.Wait()
 
 }
 
-func hello(wg *sync.WaitGroup) {
+func consumer_hello(wg *sync.WaitGroup) {
 	// //hello protocol every 5 second
 	defer wg.Done()
 	var (
@@ -104,7 +105,26 @@ func hello(wg *sync.WaitGroup) {
 
 			fmt.Println(data)
 
-			v.Ngb = data
+			// Define a regular expression to match digits
+			reg := regexp.MustCompile("[0-9]+")
+
+			// Find all matches in the input string
+			matches := reg.FindAllString(data, -1)
+
+			// Combine matches to get the numeric string
+			numericString := ""
+			for _, match := range matches {
+				numericString += match
+			}
+
+			idata, err := strconv.Atoi(numericString)
+			if err != nil {
+				log.Printf("IMPOSIBLE!")
+			}
+
+			fmt.Println(idata)
+
+			v.Ngb = idata
 			v.Rtt = Rtt
 			v.Thg = Thg
 			facelist[k] = v
@@ -167,7 +187,7 @@ func hello(wg *sync.WaitGroup) {
 // 	}
 // }
 
-func producer_facelist(name string, fresh int, wg *sync.WaitGroup) {
+func producer_info(name string, fresh int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var (
 		client mgmt.Client
@@ -341,6 +361,8 @@ func update_facelist() {
 	} else {
 		parse_facelist(data.Content)
 	}
+
+	c.Close()
 }
 
 func register_route(name string, cost int, faceid int) {

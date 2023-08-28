@@ -6,7 +6,6 @@ import (
 	"log"
 	"sync"
 	"time"
-	b64 "encoding/base64"
 
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"

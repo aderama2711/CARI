@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/RyanCarrier/dijkstra"
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/l3"
@@ -31,285 +30,31 @@ type faces struct {
 	N_in uint64  `json:"N_in"`
 }
 
-type neighbor struct {
-	Cst int64 `json:"Cst"`
-	Fce int   `json:"Fce"`
-}
-
-// facelist for neighbor info
 var facelist map[uint64]faces
-
-// prefixlist for saving producer of prefixes
-var prefixlist map[int][]string
-
-var network map[int]map[int]neighbor
 
 var mutex sync.Mutex
 
 func main() {
 	facelist = make(map[uint64]faces)
-	prefixlist = make(map[int][]string)
 
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 
-	// hello procedure then asking route info
-	go consumer_helloandinfo(&wg)
+	// consumer for hello procedure (to neighbor)
+	go consumer_hello(&wg)
 
-	// serve prefix registration
-	go producer_prefix(&wg)
+	// producer for neighbor info (for controller)
+	go producer_info("/info", 100, &wg)
 
+	// producer for route update (for controller)
+	go producer_update("/update", 100, &wg)
 	wg.Wait()
 
 }
 
-func consumer_helloandinfo(wg *sync.WaitGroup) {
-	// hello protocol every 5 second
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	interval := 10 * time.Second
-	for {
-		//update facelist
-		update_facelist()
-		fmt.Println(facelist)
-
-		//create route
-		for k, v := range facelist {
-			register_route(v.Tkn, 0, int(k))
-
-			fmt.Println(k, v.Tkn)
-			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
-			interest.MustBeFresh = true
-
-			data, rtt, thg, e := consumer_interest(interest)
-
-			if e != nil {
-				continue
-			}
-
-			fmt.Println(data)
-
-			// Define a regular expression to match digits
-			reg := regexp.MustCompile("[0-9]+")
-
-			// Find all matches in the input string
-			matches := reg.FindAllString(data, -1)
-
-			// Combine matches to get the numeric string
-			numericString := ""
-			for _, match := range matches {
-				numericString += match
-			}
-
-			idata, err := strconv.Atoi(numericString)
-			if err != nil {
-				log.Printf("IMPOSIBLE!")
-			}
-
-			fmt.Println(idata)
-
-			v.Ngb = idata
-			v.Rtt = rtt
-			v.Thg = thg
-			facelist[k] = v
-
-		}
-		fmt.Println(facelist)
-
-		//request route info
-		for k, v := range facelist {
-
-			fmt.Println(k, v.Tkn)
-
-			//request route info interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("info")})
-			interest.MustBeFresh = true
-
-			data, _, _, e := consumer_interest(interest)
-
-			if e != nil {
-				continue
-			}
-
-			fmt.Println(data)
-
-			// Create temp map for json string -> map
-			var temp_fl map[uint64]faces
-
-			err := json.Unmarshal([]byte(data), &temp_fl)
-			if err != nil {
-				log.Println("Error: ", err)
-			}
-
-			// convert facelist to network map
-			var temp map[int]neighbor
-			temp = make(map[int]neighbor)
-			for key, value := range temp_fl {
-				cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-				temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
-			}
-			mutex.Lock()
-			network[v.Ngb] = temp
-			mutex.Unlock()
-
-			recalculate_route()
-
-		}
-
-		time.Sleep(interval)
-	}
-
-}
-
-func recalculate_route() {
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	// Insert neighbor data to graph for calculating the route using dijkstra library
-	graph := dijkstra.NewGraph()
-
-	var temp_network map[int]map[int]neighbor
-	var temp_prefixlist map[int][]string
-	var temp_facelist map[uint64]faces
-
-	mutex.Lock()
-	temp_network = network
-	temp_prefixlist = prefixlist
-	temp_facelist = facelist
-	mutex.Unlock()
-
-	// Add vertex
-	for key, _ := range temp_network {
-		graph.AddVertex(key)
-	}
-
-	var validate []string
-
-	// Iterate over the network map using a for range loop to create vertices
-	for key, _ := range temp_network {
-		for keys, _ := range temp_network[key] {
-			if (strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", keys, key)) {
-				continue
-			}
-			graph.AddArc(key, keys, temp_network[key][keys].Cst)
-			validate = append(validate, fmt.Sprintf("%d, %d", key, keys))
-		}
-	}
-
-	// Iterate over the prefixlist using a for range loop to calculate every node to producer with prefix
-	for prod, _ := range temp_prefixlist {
-		for cons, _ := range network {
-			// if node is producer, skip
-			if cons == prod {
-				continue
-			} else {
-				// Search the best path
-				best, err := graph.Shortest(cons, prod)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
-
-				// Install prefix and list
-				for _, prefix := range temp_prefixlist[prod] {
-					fmt.Println(cons, prefix, network[0][best.Path[1]].Fce)
-
-					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
-					interest.MustBeFresh = true
-					interest.UpdateParamsDigest() //Update SHA256 params
-
-					data, _, _, err := consumer_interest(interest)
-
-					if err != nil {
-						continue
-					}
-
-					fmt.Println(data)
-				}
-
-				// Search the longest path
-				best, err = graph.Longest(cons, prod)
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
-
-				// Install prefix and list
-				for _, prefix := range temp_prefixlist[prod] {
-					fmt.Println(cons, prefix, network[0][best.Path[1]].Fce)
-
-					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
-					interest.MustBeFresh = true
-					interest.UpdateParamsDigest() //Update SHA256 params
-
-					data, _, _, err := consumer_interest(interest)
-
-					if err != nil {
-						continue
-					}
-
-					fmt.Println(data)
-				}
-			}
-		}
-	}
-
-	client.Close()
-
-}
-
-func producer_prefix(wg *sync.WaitGroup) {
+func consumer_hello(wg *sync.WaitGroup) {
+	// //hello protocol every 5 second
 	defer wg.Done()
 	var (
 		client mgmt.Client
@@ -337,38 +82,69 @@ func producer_prefix(wg *sync.WaitGroup) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
-	var signer ndn.Signer
+	//update facelist
+	update_facelist()
+	fmt.Println(facelist)
 
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName("/prefix"),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// Get App Param
-				log.Println("Payload = " + string(interest.AppParameters))
-				splits := strings.Split(string(interest.AppParameters), ",")
-				prod, _ := strconv.Atoi(splits[1])
-				prefix := splits[2]
+	//create route
+	for k, v := range facelist {
+		register_route(v.Tkn, 0, int(k))
 
-				// Update prefixlist
-				mutex.Lock()
-				prefixlist[prod] = append(prefixlist[prod], prefix)
-				mutex.Unlock()
+		fmt.Println(k, v.Tkn)
+		//send hello interest to every face
+		interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+		interest.MustBeFresh = true
 
-				payload := []byte(string(interest.AppParameters))
-				return ndn.MakeData(interest, payload, time.Duration(10)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
+		data, Rtt, Thg, e := consumer_interest(interest)
 
 		if e != nil {
-			fmt.Println(e)
+			continue
 		}
 
-		<-ctx.Done()
-		defer p.Close()
+		fmt.Println(data)
+
+		// Define a regular expression to match digits
+		reg := regexp.MustCompile("[0-9]+")
+
+		// Find all matches in the input string
+		matches := reg.FindAllString(data, -1)
+
+		// Combine matches to get the numeric string
+		numericString := ""
+		for _, match := range matches {
+			numericString += match
+		}
+
+		idata, err := strconv.Atoi(numericString)
+		if err != nil {
+			log.Printf("IMPOSIBLE!")
+		}
+
+		fmt.Println(idata)
+
+		v.Ngb = idata
+		v.Rtt = Rtt
+		v.Thg = Thg
+		facelist[k] = v
+
 	}
+	fmt.Println(facelist)
+
+	for _, v := range facelist {
+		// update route
+		interest := ndn.MakeInterest(ndn.ParseName("prefix"), []byte(fmt.Sprintf("%d,%s", 2, "/ndn/coba")), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("update")})
+		interest.MustBeFresh = true
+		interest.UpdateParamsDigest() //Update SHA256 params
+
+		data, _, _, err := consumer_interest(interest)
+
+		if err != nil {
+			continue
+		}
+
+		fmt.Println(data)
+	}
+
 }
 
 // Commented for "future use"
@@ -597,6 +373,8 @@ func update_facelist() {
 	} else {
 		parse_facelist(data.Content)
 	}
+
+	c.Close()
 }
 
 func register_route(name string, cost int, faceid int) {
