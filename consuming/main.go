@@ -509,15 +509,19 @@ func parse_facelist(raw []byte) {
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStriNgbytes(16)
 			fmt.Println(uri)
-			mutex.Lock()
-			if _, ok := facelist[faceid]; ok {
-				fmt.Println("Use existing")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
-			} else {
-				fmt.Println("Create new")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+
+			if {
+				mutex.Lock()
+				if _, ok := facelist[faceid]; ok {
+					fmt.Println("Use existing")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+				} else {
+					fmt.Println("Create new")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+				}
+				mutex.Unlock()
 			}
-			mutex.Unlock()
+			
 		}
 	}
 }

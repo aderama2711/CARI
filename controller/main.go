@@ -49,6 +49,7 @@ var mutex sync.Mutex
 func main() {
 	facelist = make(map[uint64]faces)
 	prefixlist = make(map[int][]string)
+	network = map[int]map[int]neighbor{}
 
 	var wg sync.WaitGroup
 
@@ -365,6 +366,8 @@ func producer_prefix(wg *sync.WaitGroup) {
 		if e != nil {
 			fmt.Println(e)
 		}
+
+		recalculate_route()
 
 		<-ctx.Done()
 		defer p.Close()
@@ -742,16 +745,21 @@ func parse_facelist(raw []byte) {
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStriNgbytes(16)
+
 			fmt.Println(uri)
-			mutex.Lock()
-			if _, ok := facelist[faceid]; ok {
-				fmt.Println("Use existing")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+			if strings.Contains(uri, ":6363") {
+				mutex.Lock()
+				if _, ok := facelist[faceid]; ok {
+					fmt.Println("Use existing")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+				} else {
+					fmt.Println("Create new")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+				}
+				mutex.Unlock()
 			} else {
-				fmt.Println("Create new")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+				continue
 			}
-			mutex.Unlock()
 		}
 	}
 }
