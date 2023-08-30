@@ -129,6 +129,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 			v.Thg = Thg
 			facelist[k] = v
 
+			time.Sleep(500 * time.Millisecond)
+
 		}
 		fmt.Println(facelist)
 		time.Sleep(interval)

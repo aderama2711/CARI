@@ -140,6 +140,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			v.Thg = thg
 			facelist[k] = v
 
+			time.Sleep(500 * time.Millisecond)
 		}
 		fmt.Println(facelist)
 
@@ -179,6 +180,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			network[v.Ngb] = temp
 			mutex.Unlock()
 
+			time.Sleep(500 * time.Millisecond)
 		}
 
 		recalculate_route()
@@ -230,6 +232,10 @@ func recalculate_route() {
 	temp_facelist = facelist
 	mutex.Unlock()
 
+	fmt.Println(temp_network)
+	fmt.Println(temp_prefixlist)
+	fmt.Println(temp_facelist)
+
 	// Add vertex
 	for key, _ := range temp_network {
 		graph.AddVertex(key)
@@ -262,12 +268,20 @@ func recalculate_route() {
 				}
 				fmt.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
+				router := uint64(0)
+
+				for key, value := range temp_facelist {
+					if value.Ngb == cons {
+						router = key
+					}
+				}
+
 				// Install prefix and list
 				for _, prefix := range temp_prefixlist[prod] {
 					fmt.Println(cons, prefix, network[0][best.Path[1]].Fce)
 
 					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
+					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 					interest.MustBeFresh = true
 					interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -351,8 +365,8 @@ func producer_prefix(wg *sync.WaitGroup) {
 				// Get App Param
 				log.Println("Payload = " + string(interest.AppParameters))
 				splits := strings.Split(string(interest.AppParameters), ",")
-				prod, _ := strconv.Atoi(splits[1])
-				prefix := splits[2]
+				prod, _ := strconv.Atoi(splits[0])
+				prefix := splits[1]
 
 				// Update prefixlist
 				mutex.Lock()
