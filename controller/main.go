@@ -360,6 +360,8 @@ func producer_prefix(wg *sync.WaitGroup) {
 				fmt.Println(prefixlist)
 				mutex.Unlock()
 
+				recalculate_route()
+
 				payload := []byte(string(interest.AppParameters))
 				return ndn.MakeData(interest, payload, time.Duration(10)*time.Millisecond), nil
 			},
@@ -369,8 +371,6 @@ func producer_prefix(wg *sync.WaitGroup) {
 		if e != nil {
 			fmt.Println(e)
 		}
-
-		recalculate_route()
 
 		<-ctx.Done()
 		defer p.Close()
