@@ -179,9 +179,11 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			network[v.Ngb] = temp
 			mutex.Unlock()
 
-			recalculate_route()
-
 		}
+
+		recalculate_route()
+
+		fmt.Println("prefix list: ", prefixlist)
 
 		time.Sleep(interval)
 	}
