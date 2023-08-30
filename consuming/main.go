@@ -510,7 +510,7 @@ func parse_facelist(raw []byte) {
 			stoken := "/" + RandStriNgbytes(16)
 			fmt.Println(uri)
 
-			if {
+			if strings.Contains(uri, ":6363") {
 				mutex.Lock()
 				if _, ok := facelist[faceid]; ok {
 					fmt.Println("Use existing")
@@ -520,8 +520,10 @@ func parse_facelist(raw []byte) {
 					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
 				}
 				mutex.Unlock()
+			} else {
+				continue
 			}
-			
+
 		}
 	}
 }
