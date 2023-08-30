@@ -355,6 +355,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 				// Update prefixlist
 				mutex.Lock()
 				prefixlist[prod] = append(prefixlist[prod], prefix)
+				fmt.Println(prefixlist)
 				mutex.Unlock()
 
 				payload := []byte(string(interest.AppParameters))

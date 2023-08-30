@@ -44,11 +44,11 @@ func main() {
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
 
-	// producer for neighbor info (for controller)
-	go producer_info("/info", 100, &wg)
+	// // producer for neighbor info (for controller)
+	// go producer_info("/info", 100, &wg)
 
-	// producer for route update (for controller)
-	go producer_update("/update", 100, &wg)
+	// // producer for route update (for controller)
+	// go producer_update("/update", 100, &wg)
 	wg.Wait()
 
 }
@@ -92,7 +92,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 		fmt.Println(k, v.Tkn)
 		//send hello interest to every face
-		interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+		interest := ndn.MakeInterest(ndn.ParseName("prefix"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("prefix")}, []byte("2,/coba"))
+
 		interest.MustBeFresh = true
 
 		data, Rtt, Thg, e := consumer_interest(interest)
@@ -521,15 +522,20 @@ func parse_facelist(raw []byte) {
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStriNgbytes(16)
 			fmt.Println(uri)
-			mutex.Lock()
-			if _, ok := facelist[faceid]; ok {
-				fmt.Println("Use existing")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+
+			if strings.Contains(uri, ":6363") {
+				mutex.Lock()
+				if _, ok := facelist[faceid]; ok {
+					fmt.Println("Use existing")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+				} else {
+					fmt.Println("Create new")
+					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+				}
+				mutex.Unlock()
 			} else {
-				fmt.Println("Create new")
-				facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+				continue
 			}
-			mutex.Unlock()
 		}
 	}
 }
