@@ -26,7 +26,13 @@ func main() {
 }
 
 func producer(name string, content string, fresh int) {
-	payload := []byte(content)
+	asciicontent := ""
+
+	for _, char := range content {
+		asciicontent += fmt.Sprintf("%d", char)
+	}
+
+	payload := []byte(asciicontent)
 	var (
 		client mgmt.Client
 		face   mgmt.Face

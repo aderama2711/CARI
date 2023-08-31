@@ -264,7 +264,8 @@ func recalculate_route() {
 				// Search the best path
 				best, err := graph.Shortest(cons, prod)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err)
+					continue
 				}
 				fmt.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
@@ -278,10 +279,10 @@ func recalculate_route() {
 
 				// Install prefix and list
 				for _, prefix := range temp_prefixlist[prod] {
-					fmt.Println(cons, prefix, network[0][best.Path[1]].Fce)
+					fmt.Println(cons, prefix, network[cons][best.Path[1]].Fce)
 
 					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 					interest.MustBeFresh = true
 					interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -297,7 +298,8 @@ func recalculate_route() {
 				// Search the longest path
 				best, err = graph.Longest(cons, prod)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err)
+					continue
 				}
 				fmt.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
