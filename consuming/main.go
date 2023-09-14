@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"regexp"
@@ -66,13 +65,13 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -86,13 +85,14 @@ func consumer_hello(wg *sync.WaitGroup) {
 	for {
 		//update facelist
 		update_facelist()
-		fmt.Println(facelist)
+		log.Println("Facelist : ", facelist)
 
+		log.Println("===== Hello Procedure =====")
 		//create route
 		for k, v := range facelist {
 			register_route(v.Tkn, 0, int(k))
 
-			fmt.Println(k, v.Tkn)
+			log.Print(k, v.Tkn)
 			//send hello interest to every face
 			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
 			interest.MustBeFresh = true
@@ -100,10 +100,9 @@ func consumer_hello(wg *sync.WaitGroup) {
 			data, Rtt, Thg, e := consumer_interest(interest)
 
 			if e != nil {
+				log.Println("Error occured : ", e)
 				continue
 			}
-
-			fmt.Println(data)
 
 			// Define a regular expression to match digits
 			reg := regexp.MustCompile("[0-9]+")
@@ -122,7 +121,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 				log.Printf("IMPOSIBLE!")
 			}
 
-			fmt.Println(idata)
+			log.Println(" neighbor : ", idata)
 
 			v.Ngb = idata
 			v.Rtt = Rtt
@@ -132,7 +131,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 			time.Sleep(500 * time.Millisecond)
 
 		}
-		fmt.Println(facelist)
+		log.Println("Updated Facelist : ", facelist)
 		time.Sleep(interval)
 	}
 }
@@ -150,13 +149,13 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 // 	face, e = client.OpenFace()
 // 	if e != nil {
-// 		fmt.Println(e)
+// 		log.Println("Error occured : ", e)
 // 	}
 // 	l3face := face.Face()
 
 // 	fw := l3.GetDefaultForwarder()
 // 	if fwFace, e = fw.AddFace(l3face); e != nil {
-// 		fmt.Println(e)
+// 		log.Println("Error occured : ", e)
 // 	}
 // 	fwFace.AddRoute(ndn.Name{})
 // 	fw.AddReadvertiseDestination(face)
@@ -181,7 +180,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 // 		})
 
 // 		if e != nil {
-// 			fmt.Println(e)
+// 			log.Println("Error occured : ", e)
 // 		}
 
 // 		<-ctx.Done()
@@ -201,13 +200,13 @@ func producer_info(name string, fresh int, wg *sync.WaitGroup) {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -237,7 +236,7 @@ func producer_info(name string, fresh int, wg *sync.WaitGroup) {
 		})
 
 		if e != nil {
-			fmt.Println(e)
+			log.Println("Error occured : ", e)
 		}
 
 		<-ctx.Done()
@@ -257,13 +256,13 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -294,7 +293,7 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 		})
 
 		if e != nil {
-			fmt.Println(e)
+			log.Println("Error occured : ", e)
 		}
 
 		<-ctx.Done()
@@ -315,7 +314,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg 
 
 	Rtt = float64(raw_Rtt / time.Millisecond)
 
-	fmt.Println(Rtt)
+	// fmt.Println(Rtt)
 
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
@@ -359,7 +358,7 @@ func update_facelist() {
 		endpoint.ConsumerOptions{})
 
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	} else {
 		parse_facelist(data.Content)
 	}
@@ -379,12 +378,12 @@ func register_route(name string, cost int, faceid int) {
 	})
 
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	if cr.StatusCode != 200 {
-		fmt.Println("unexpected response status %d", cr.StatusCode)
+		log.Println("unexpected response status %d", cr.StatusCode)
 	} else {
-		fmt.Println("Route registered")
+		log.Println("Route registered")
 	}
 }
 
@@ -426,6 +425,7 @@ func parse_facelist(raw []byte) {
 		uri      string
 	)
 
+	log.Println("===== Update Facelist =====")
 	pointer = 0
 	for pointer != uint64(len(raw)) {
 		// check per face
@@ -510,15 +510,15 @@ func parse_facelist(raw []byte) {
 			// rand.Read(token)
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStriNgbytes(16)
-			fmt.Println(uri)
 
 			if strings.Contains(uri, ":6363") {
+				log.Println("FaceId : ", uri)
 				mutex.Lock()
 				if _, ok := facelist[faceid]; ok {
-					fmt.Println("Use existing")
+					log.Println("Use existing")
 					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
 				} else {
-					fmt.Println("Create new")
+					log.Println("Create new")
 					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
 				}
 				mutex.Unlock()

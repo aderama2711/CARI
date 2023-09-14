@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -17,9 +18,16 @@ import (
 func main() {
 	var wg sync.WaitGroup
 
+	if len(os.Args) < 1 {
+		fmt.Println("Usage: main.go routerID")
+		return
+	}
+
+	routerID := os.Args[1]
+
 	wg.Add(1)
 
-	producer("hello", "R1", 10)
+	producer("hello", routerID, 100)
 
 	wg.Wait()
 

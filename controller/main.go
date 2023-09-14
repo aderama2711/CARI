@@ -77,13 +77,14 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
+
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -97,13 +98,14 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 	for {
 		//update facelist
 		update_facelist()
-		fmt.Println(facelist)
+		log.Println("Facelist : ", facelist)
 
+		log.Println("===== Hello Procedure =====")
 		//create route
 		for k, v := range facelist {
 			register_route(v.Tkn, 0, int(k))
 
-			fmt.Println(k, v.Tkn)
+			log.Print(k, v.Tkn)
 			//send hello interest to every face
 			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
 			interest.MustBeFresh = true
@@ -111,10 +113,9 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			data, rtt, thg, e := consumer_interest(interest)
 
 			if e != nil {
+				log.Println("Error occured : ", e)
 				continue
 			}
-
-			fmt.Println(data)
 
 			// Define a regular expression to match digits
 			reg := regexp.MustCompile("[0-9]+")
@@ -133,7 +134,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				log.Printf("IMPOSIBLE!")
 			}
 
-			fmt.Println(idata)
+			log.Println(" neighbor : ", idata)
 
 			v.Ngb = idata
 			v.Rtt = rtt
@@ -142,12 +143,14 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 
 			time.Sleep(500 * time.Millisecond)
 		}
-		fmt.Println(facelist)
 
+		log.Println("Updated Facelist : ", facelist)
+
+		log.Println("===== Request Route Info =====")
 		//request route info
 		for k, v := range facelist {
 
-			fmt.Println(k, v.Tkn)
+			log.Print(k, v.Tkn)
 
 			//request route info interest to every face
 			interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("info")})
@@ -159,7 +162,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				continue
 			}
 
-			fmt.Println(data)
+			log.Println(" route info : \n", data)
 
 			// Create temp map for json string -> map
 			var temp_fl map[uint64]faces
@@ -173,7 +176,8 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			var temp map[int]neighbor
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
-				cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
+				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
+				cost := (value.Thg + value.Rtt) * (1 - (float64(value.N_oi) / float64(value.N_in)))
 				temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
 			}
 			mutex.Lock()
@@ -185,7 +189,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 
 		recalculate_route()
 
-		fmt.Println("prefix list: ", prefixlist)
+		log.Println("Registered prefix list : ", prefixlist)
 
 		time.Sleep(interval)
 	}
@@ -203,13 +207,13 @@ func recalculate_route() {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -232,9 +236,10 @@ func recalculate_route() {
 	temp_facelist = facelist
 	mutex.Unlock()
 
-	fmt.Println(temp_network)
-	fmt.Println(temp_prefixlist)
-	fmt.Println(temp_facelist)
+	log.Println("===== Calculating Routes =====")
+	log.Println("Network : \n", temp_network)
+	log.Println("Prefix : \n", temp_prefixlist)
+	log.Println("Face : \n", temp_facelist)
 
 	// Add vertex
 	for key, _ := range temp_network {
@@ -264,10 +269,10 @@ func recalculate_route() {
 				// Search the best path
 				best, err := graph.Shortest(cons, prod)
 				if err != nil {
-					log.Println(err)
+					log.Println("Error occured : ", e)
 					continue
 				}
-				fmt.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
+				log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
 				router := uint64(0)
 
@@ -279,7 +284,7 @@ func recalculate_route() {
 
 				// Install prefix and list
 				for _, prefix := range temp_prefixlist[prod] {
-					fmt.Println(cons, prefix, network[cons][best.Path[1]].Fce)
+					log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
 
 					// update route
 					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
@@ -289,10 +294,11 @@ func recalculate_route() {
 					data, _, _, err := consumer_interest(interest)
 
 					if err != nil {
+						log.Println("Error occured : ", e)
 						continue
 					}
 
-					fmt.Println(data)
+					log.Println(data)
 				}
 
 				// Search the longest path
@@ -301,11 +307,11 @@ func recalculate_route() {
 					log.Println(err)
 					continue
 				}
-				fmt.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
+				log.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
 				// Install prefix and list
 				for _, prefix := range temp_prefixlist[prod] {
-					fmt.Println(cons, prefix, network[0][best.Path[1]].Fce)
+					log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
 
 					// update route
 					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
@@ -318,7 +324,7 @@ func recalculate_route() {
 						continue
 					}
 
-					fmt.Println(data)
+					log.Println(data)
 				}
 			}
 		}
@@ -340,13 +346,13 @@ func producer_prefix(wg *sync.WaitGroup) {
 
 	face, e = client.OpenFace()
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	l3face := face.Face()
 
 	fw := l3.GetDefaultForwarder()
 	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	fwFace.AddRoute(ndn.Name{})
 	fw.AddReadvertiseDestination(face)
@@ -373,7 +379,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 				// Update prefixlist
 				mutex.Lock()
 				prefixlist[prod] = append(prefixlist[prod], prefix)
-				fmt.Println(prefixlist)
+				// fmt.Println(prefixlist)
 				mutex.Unlock()
 
 				recalculate_route()
@@ -385,7 +391,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 		})
 
 		if e != nil {
-			fmt.Println(e)
+			log.Println("Error occured : ", e)
 		}
 
 		<-ctx.Done()
@@ -406,13 +412,13 @@ func producer_prefix(wg *sync.WaitGroup) {
 
 // 	face, e = client.OpenFace()
 // 	if e != nil {
-// 		fmt.Println(e)
+// 		log.Println("Error occured : ", e)
 // 	}
 // 	l3face := face.Face()
 
 // 	fw := l3.GetDefaultForwarder()
 // 	if fwFace, e = fw.AddFace(l3face); e != nil {
-// 		fmt.Println(e)
+// 		log.Println("Error occured : ", e)
 // 	}
 // 	fwFace.AddRoute(ndn.Name{})
 // 	fw.AddReadvertiseDestination(face)
@@ -437,7 +443,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 // 		})
 
 // 		if e != nil {
-// 			fmt.Println(e)
+// 			log.Println("Error occured : ", e)
 // 		}
 
 // 		<-ctx.Done()
@@ -445,118 +451,118 @@ func producer_prefix(wg *sync.WaitGroup) {
 // 	}
 // }
 
-func producer_info(name string, fresh int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
+// func producer_info(name string, fresh int, wg *sync.WaitGroup) {
+// 	defer wg.Done()
+// 	var (
+// 		client mgmt.Client
+// 		face   mgmt.Face
+// 		fwFace l3.FwFace
+// 	)
 
-	client, e := nfdmgmt.New()
+// 	client, e := nfdmgmt.New()
 
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
+// 	face, e = client.OpenFace()
+// 	if e != nil {
+// 		log.Println("Error occured : ", e)
+// 	}
+// 	l3face := face.Face()
 
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
+// 	fw := l3.GetDefaultForwarder()
+// 	if fwFace, e = fw.AddFace(l3face); e != nil {
+// 		log.Println("Error occured : ", e)
+// 	}
+// 	fwFace.AddRoute(ndn.Name{})
+// 	fw.AddReadvertiseDestination(face)
 
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+// 	log.Printf("uplink opened, state is %s", l3face.State())
+// 	l3face.OnStateChange(func(st l3.TransportState) {
+// 		log.Printf("uplink state changes to %s", l3face.State())
+// 	})
 
-	var signer ndn.Signer
+// 	var signer ndn.Signer
 
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// fmt.Println(interest)
-				content, err := json.Marshal(facelist)
-				if err != nil {
-					log.Printf(err.Error())
-				}
-				payload := []byte(string(content))
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
+// 	for {
+// 		ctx := context.Background()
+// 		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+// 			Prefix:      ndn.ParseName(name),
+// 			NoAdvertise: false,
+// 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+// 				// fmt.Println(interest)
+// 				content, err := json.Marshal(facelist)
+// 				if err != nil {
+// 					log.Printf(err.Error())
+// 				}
+// 				payload := []byte(string(content))
+// 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
+// 			},
+// 			DataSigner: signer,
+// 		})
 
-		if e != nil {
-			fmt.Println(e)
-		}
+// 		if e != nil {
+// 			log.Println("Error occured : ", e)
+// 		}
 
-		<-ctx.Done()
-		defer p.Close()
-	}
-}
+// 		<-ctx.Done()
+// 		defer p.Close()
+// 	}
+// }
 
-func producer_update(name string, fresh int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
+// func producer_update(name string, fresh int, wg *sync.WaitGroup) {
+// 	defer wg.Done()
+// 	var (
+// 		client mgmt.Client
+// 		face   mgmt.Face
+// 		fwFace l3.FwFace
+// 	)
 
-	client, e := nfdmgmt.New()
+// 	client, e := nfdmgmt.New()
 
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
+// 	face, e = client.OpenFace()
+// 	if e != nil {
+// 		log.Println("Error occured : ", e)
+// 	}
+// 	l3face := face.Face()
 
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
+// 	fw := l3.GetDefaultForwarder()
+// 	if fwFace, e = fw.AddFace(l3face); e != nil {
+// 		log.Println("Error occured : ", e)
+// 	}
+// 	fwFace.AddRoute(ndn.Name{})
+// 	fw.AddReadvertiseDestination(face)
 
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
+// 	log.Printf("uplink opened, state is %s", l3face.State())
+// 	l3face.OnStateChange(func(st l3.TransportState) {
+// 		log.Printf("uplink state changes to %s", l3face.State())
+// 	})
 
-	var signer ndn.Signer
+// 	var signer ndn.Signer
 
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// Get App Param
-				log.Println("Payload = " + string(interest.AppParameters))
-				splits := strings.Split(string(interest.AppParameters), ",")
-				cost, _ := strconv.Atoi(splits[1])
-				face, _ := strconv.Atoi(splits[2])
-				register_route(splits[0], cost, face)
-				payload := []byte(string(interest.AppParameters))
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
+// 	for {
+// 		ctx := context.Background()
+// 		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+// 			Prefix:      ndn.ParseName(name),
+// 			NoAdvertise: false,
+// 			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+// 				// Get App Param
+// 				log.Println("Payload = " + string(interest.AppParameters))
+// 				splits := strings.Split(string(interest.AppParameters), ",")
+// 				cost, _ := strconv.Atoi(splits[1])
+// 				face, _ := strconv.Atoi(splits[2])
+// 				register_route(splits[0], cost, face)
+// 				payload := []byte(string(interest.AppParameters))
+// 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
+// 			},
+// 			DataSigner: signer,
+// 		})
 
-		if e != nil {
-			fmt.Println(e)
-		}
+// 		if e != nil {
+// 			log.Println("Error occured : ", e)
+// 		}
 
-		<-ctx.Done()
-		defer p.Close()
-	}
-}
+// 		<-ctx.Done()
+// 		defer p.Close()
+// 	}
+// }
 
 func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
 	// seqNum := rand.Uint64()
@@ -571,7 +577,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg 
 
 	Rtt = float64(raw_Rtt / time.Millisecond)
 
-	fmt.Println(Rtt)
+	// fmt.Println(Rtt)
 
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
@@ -615,7 +621,7 @@ func update_facelist() {
 		endpoint.ConsumerOptions{})
 
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	} else {
 		parse_facelist(data.Content)
 	}
@@ -633,12 +639,12 @@ func register_route(name string, cost int, faceid int) {
 	})
 
 	if e != nil {
-		fmt.Println(e)
+		log.Println("Error occured : ", e)
 	}
 	if cr.StatusCode != 200 {
-		fmt.Println("unexpected response status %d", cr.StatusCode)
+		log.Println("unexpected response status %d", cr.StatusCode)
 	} else {
-		fmt.Println("Route registered")
+		log.Println("Route registered")
 	}
 }
 
@@ -680,6 +686,7 @@ func parse_facelist(raw []byte) {
 		uri      string
 	)
 
+	log.Println("===== Update Facelist =====")
 	pointer = 0
 	for pointer != uint64(len(raw)) {
 		// check per face
@@ -765,14 +772,14 @@ func parse_facelist(raw []byte) {
 			// stoken := hex.EncodeToString(token)
 			stoken := "/" + RandStriNgbytes(16)
 
-			fmt.Println(uri)
 			if strings.Contains(uri, ":6363") {
+				log.Println("FaceId : ", uri)
 				mutex.Lock()
 				if _, ok := facelist[faceid]; ok {
-					fmt.Println("Use existing")
+					log.Println("Use existing")
 					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
 				} else {
-					fmt.Println("Create new")
+					log.Println("Create new")
 					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
 				}
 				mutex.Unlock()
