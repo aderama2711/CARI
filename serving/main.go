@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,12 +36,23 @@ func main() {
 
 func producer(name string, content string, fresh int) {
 	asciicontent := ""
+	data := ""
 
 	for _, char := range content {
 		asciicontent += fmt.Sprintf("%d", char)
 	}
 
-	payload := []byte(asciicontent)
+	// Stuffing
+	fmt.Println(len(asciicontent))
+
+	if len(asciicontent) < 8192 {
+		data = strings.Repeat("A", 8192-len(asciicontent))
+		data = asciicontent + data
+	} else {
+		data = asciicontent
+	}
+
+	payload := []byte(data)
 	var (
 		client mgmt.Client
 		face   mgmt.Face
