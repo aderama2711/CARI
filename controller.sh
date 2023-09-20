@@ -1,6 +1,4 @@
 #!/bin/bash
-
-#run serving go apps
-go run serving/main.go controller &> serving.log &
+echo %(date) >> ~/timedate.log &
 #run consuming go apps
 go run controller/main.go &> controller.log &

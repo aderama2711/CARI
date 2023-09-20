@@ -104,6 +104,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 				continue
 			}
 
+			data = strings.ReplaceAll(data, "A", "")
+
 			// Define a regular expression to match digits
 			reg := regexp.MustCompile("[0-9]+")
 
