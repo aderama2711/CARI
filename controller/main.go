@@ -23,12 +23,12 @@ import (
 )
 
 type faces struct {
-	Ngb  int     `json:"Ngb"`
-	Rtt  float64 `json:"Rtt"`
-	Thg  float64 `json:"Thg"`
-	Tkn  string  `json:"Tkn"`
-	N_oi uint64  `json:"N_oi"`
-	N_in uint64  `json:"N_in"`
+	Ngb  int    `json:"Ngb"`
+	Rtt  uint64 `json:"Rtt"`
+	Thg  uint64 `json:"Thg"`
+	Tkn  string `json:"Tkn"`
+	N_oi uint64 `json:"N_oi"`
+	N_in uint64 `json:"N_in"`
 }
 
 type neighbor struct {
@@ -179,7 +179,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-				cost := (value.Thg + value.Rtt) * (1 - (float64(value.N_oi) / float64(value.N_in)))
+				cost := uint64(value.Thg+value.Rtt) * (1 - uint64(value.N_oi/value.N_in))
 				temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
 			}
 			mutex.Lock()
@@ -271,7 +271,7 @@ func recalculate_route() {
 				// Search the best path
 				best, err := graph.Shortest(cons, prod)
 				if err != nil {
-					log.Println("Error occured : ", e)
+					log.Println("Error occured : ", err)
 					continue
 				}
 				log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
@@ -566,7 +566,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 // 	}
 // }
 
-func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
+func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg uint64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
@@ -577,7 +577,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg 
 
 	raw_Rtt := time.Since(t0)
 
-	Rtt = float64(raw_Rtt / time.Millisecond)
+	Rtt = uint64(raw_Rtt / time.Millisecond)
 
 	// fmt.Println(Rtt)
 
@@ -587,7 +587,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg 
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
 		if Rtt != 0 {
-			Thg = float64(len(content)) / float64(Rtt/1000)
+			Thg = uint64(len(content)) / uint64(Rtt/1000)
 		} else {
 			Thg = 0
 		}
