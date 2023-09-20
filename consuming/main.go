@@ -314,10 +314,6 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg u
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	if len(data) == 0 {
-		return
-	}
-
 	raw_Rtt := time.Since(t0)
 
 	if raw_Rtt != 0 {
