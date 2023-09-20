@@ -43,6 +43,8 @@ func main() {
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
 
+	time.Sleep(500 * time.Millisecond)
+
 	// producer for neighbor info (for controller)
 	go producer_info("/info", 100, &wg)
 
@@ -312,9 +314,15 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg u
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
+	if len(data) == 0 {
+		return
+	}
+
 	raw_Rtt := time.Since(t0)
 
-	Rtt = uint64(raw_Rtt / time.Millisecond)
+	if raw_Rtt != 0 {
+		Rtt = uint64(raw_Rtt / time.Millisecond)
+	}
 
 	// fmt.Println(Rtt)
 
@@ -323,7 +331,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg u
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		if Rtt != 0 {
+		if Rtt != 0 && len(content) != 0 {
 			Thg = uint64(len(content)) / uint64(Rtt/1000)
 		} else {
 			Thg = 0
