@@ -42,9 +42,11 @@ func main() {
 
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
+	time.Sleep(500 * time.Millisecond)
 
 	// producer for neighbor info (for controller)
 	go producer_info("/info", 100, &wg)
+	time.Sleep(500 * time.Millisecond)
 
 	// producer for route update (for controller)
 	go producer_update("/update", 100, &wg)
