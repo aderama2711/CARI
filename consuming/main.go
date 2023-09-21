@@ -21,12 +21,12 @@ import (
 )
 
 type faces struct {
-	Ngb  int    `json:"Ngb"`
-	Rtt  uint64 `json:"Rtt"`
-	Thg  uint64 `json:"Thg"`
-	Tkn  string `json:"Tkn"`
-	N_oi uint64 `json:"N_oi"`
-	N_in uint64 `json:"N_in"`
+	Ngb  int     `json:"Ngb"`
+	Rtt  float64 `json:"Rtt"`
+	Thg  float64 `json:"Thg"`
+	Tkn  string  `json:"Tkn"`
+	N_oi uint64  `json:"N_oi"`
+	N_in uint64  `json:"N_in"`
 }
 
 var facelist map[uint64]faces
@@ -42,8 +42,6 @@ func main() {
 
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
-
-	time.Sleep(500 * time.Millisecond)
 
 	// producer for neighbor info (for controller)
 	go producer_info("/info", 100, &wg)
@@ -305,7 +303,7 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 	}
 }
 
-func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg uint64, e error) {
+func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
@@ -316,9 +314,7 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg u
 
 	raw_Rtt := time.Since(t0)
 
-	if raw_Rtt != 0 {
-		Rtt = uint64(raw_Rtt / time.Millisecond)
-	}
+	Rtt = float64(raw_Rtt / time.Millisecond)
 
 	// fmt.Println(Rtt)
 
@@ -327,8 +323,8 @@ func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg u
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		if Rtt != 0 && len(content) != 0 {
-			Thg = uint64(len(content)) / uint64(Rtt/1000)
+		if Rtt != 0 {
+			Thg = float64(len(content)) / float64(Rtt/1000)
 		} else {
 			Thg = 0
 		}
