@@ -257,6 +257,9 @@ func recalculate_route() {
 	// Iterate over the network map using a for range loop to create vertices
 	for key, _ := range temp_network {
 		for keys, _ := range temp_network[key] {
+			if keys == 99116 {
+				continue
+			}
 			if (strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", keys, key)) {
 				continue
 			}
