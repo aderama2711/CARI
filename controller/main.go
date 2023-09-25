@@ -179,8 +179,12 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-				cost := uint64(value.Thg+value.Rtt) * (1 - uint64(value.N_oi/value.N_in))
-				temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
+				cost := uint64(0)
+				if value.N_oi != 0 {
+					cost = uint64(value.Thg+value.Rtt) * (1 - uint64(value.N_in/value.N_oi))
+					temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
+				}
+
 			}
 			mutex.Lock()
 			network[v.Ngb] = temp
@@ -269,7 +273,7 @@ func recalculate_route() {
 				continue
 			} else {
 				// Search the best path
-				best, err := graph.Shortest(cons, prod)
+				best, err := graph.ShortestSafe(cons, prod)
 				if err != nil {
 					log.Println("Error occured : ", err)
 					continue
@@ -296,7 +300,7 @@ func recalculate_route() {
 					data, _, _, err := consumer_interest(interest)
 
 					if err != nil {
-						log.Println("Error occured : ", e)
+						log.Println("Error occured : ", err)
 						continue
 					}
 
@@ -304,7 +308,7 @@ func recalculate_route() {
 				}
 
 				// Search the longest path
-				best, err = graph.Longest(cons, prod)
+				best, err = graph.LongestSafe(cons, prod)
 				if err != nil {
 					log.Println(err)
 					continue
