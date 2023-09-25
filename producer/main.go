@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
-	"regexp"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,12 +36,20 @@ var mutex sync.Mutex
 func main() {
 	facelist = make(map[uint64]faces)
 
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: main.go ID, prefix")
+		return
+	}
+
+	ID := os.Args[1]
+	prefix := os.Args[2]
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 
 	// consumer for hello procedure (to neighbor)
-	go consumer_hello(&wg)
+	go consumer_hello(&wg, ID, prefix)
 
 	// // producer for neighbor info (for controller)
 	// go producer_info("/info", 100, &wg)
@@ -53,7 +60,15 @@ func main() {
 
 }
 
-func consumer_hello(wg *sync.WaitGroup) {
+func consumer_hello(wg *sync.WaitGroup, ID string, prefix string) {
+	asciicontent := ""
+
+	for _, char := range ID {
+		asciicontent += fmt.Sprintf("%d", char)
+	}
+
+	id, _ := strconv.Atoi(asciicontent)
+
 	// //hello protocol every 5 second
 	defer wg.Done()
 	var (
@@ -90,50 +105,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 	for k, v := range facelist {
 		register_route(v.Tkn, 0, int(k))
 
-		fmt.Println(k, v.Tkn)
-		//send hello interest to every face
-		interest := ndn.MakeInterest(ndn.ParseName("prefix"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("prefix")}, []byte("2,/coba"))
-
-		interest.MustBeFresh = true
-
-		data, Rtt, Thg, e := consumer_interest(interest)
-
-		if e != nil {
-			continue
-		}
-
-		fmt.Println(data)
-
-		// Define a regular expression to match digits
-		reg := regexp.MustCompile("[0-9]+")
-
-		// Find all matches in the input string
-		matches := reg.FindAllString(data, -1)
-
-		// Combine matches to get the numeric string
-		numericString := ""
-		for _, match := range matches {
-			numericString += match
-		}
-
-		idata, err := strconv.Atoi(numericString)
-		if err != nil {
-			log.Printf("IMPOSIBLE!")
-		}
-
-		fmt.Println(idata)
-
-		v.Ngb = idata
-		v.Rtt = Rtt
-		v.Thg = Thg
-		facelist[k] = v
-
-	}
-	fmt.Println(facelist)
-
-	for _, v := range facelist {
 		// update route
-		interest := ndn.MakeInterest(ndn.ParseName("prefix"), []byte(fmt.Sprintf("%d,%s", 2, "/ndn/coba")), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("update")})
+		interest := ndn.MakeInterest(ndn.ParseName("prefix"), []byte(fmt.Sprintf("%d,%s", id, prefix)), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("prefix")})
 		interest.MustBeFresh = true
 		interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -199,119 +172,6 @@ func consumer_hello(wg *sync.WaitGroup) {
 // 		defer p.Close()
 // 	}
 // }
-
-func producer_info(name string, fresh int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	var signer ndn.Signer
-
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// fmt.Println(interest)
-				content, err := json.Marshal(facelist)
-				if err != nil {
-					log.Printf(err.Error())
-				}
-				payload := []byte(string(content))
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
-
-		if e != nil {
-			fmt.Println(e)
-		}
-
-		<-ctx.Done()
-		defer p.Close()
-	}
-}
-
-func producer_update(name string, fresh int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	var (
-		client mgmt.Client
-		face   mgmt.Face
-		fwFace l3.FwFace
-	)
-
-	client, e := nfdmgmt.New()
-
-	face, e = client.OpenFace()
-	if e != nil {
-		fmt.Println(e)
-	}
-	l3face := face.Face()
-
-	fw := l3.GetDefaultForwarder()
-	if fwFace, e = fw.AddFace(l3face); e != nil {
-		fmt.Println(e)
-	}
-	fwFace.AddRoute(ndn.Name{})
-	fw.AddReadvertiseDestination(face)
-
-	log.Printf("uplink opened, state is %s", l3face.State())
-	l3face.OnStateChange(func(st l3.TransportState) {
-		log.Printf("uplink state changes to %s", l3face.State())
-	})
-
-	var signer ndn.Signer
-
-	for {
-		ctx := context.Background()
-		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
-			Prefix:      ndn.ParseName(name),
-			NoAdvertise: false,
-			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
-				// Get App Param
-				log.Println("Payload = " + string(interest.AppParameters))
-				splits := strings.Split(string(interest.AppParameters), ",")
-				cost, _ := strconv.Atoi(splits[1])
-				face, _ := strconv.Atoi(splits[2])
-				register_route(splits[0], cost, face)
-				payload := []byte(string(interest.AppParameters))
-				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
-			},
-			DataSigner: signer,
-		})
-
-		if e != nil {
-			fmt.Println(e)
-		}
-
-		<-ctx.Done()
-		defer p.Close()
-	}
-}
 
 func consumer_interest(Interest ndn.Interest) (content string, Rtt uint64, Thg uint64, e error) {
 	// seqNum := rand.Uint64()
