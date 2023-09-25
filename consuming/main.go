@@ -55,7 +55,7 @@ func main() {
 }
 
 func consumer_hello(wg *sync.WaitGroup) {
-	// //hello protocol every 5 second
+	// //hello protocol every 60 second
 	defer wg.Done()
 	var (
 		client mgmt.Client
@@ -83,7 +83,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
-	interval := 10 * time.Second
+	interval := 60 * time.Second
 	for {
 		//update facelist
 		update_facelist()
