@@ -94,7 +94,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
-	interval := 10 * time.Second
+	interval := 30 * time.Second
 	for {
 		//update facelist
 		update_facelist()
