@@ -260,7 +260,7 @@ func recalculate_route() {
 			if keys == 99116 {
 				continue
 			}
-			if (strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, ","), fmt.Sprintf("%d, %d", keys, key)) {
+			if (strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", keys, key)) {
 				continue
 			}
 			graph.AddArc(key, keys, temp_network[key][keys].Cst)
