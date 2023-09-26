@@ -257,12 +257,16 @@ func recalculate_route() {
 	// Iterate over the network map using a for range loop to create vertices
 	for key, _ := range temp_network {
 		for keys, _ := range temp_network[key] {
-			if keys == 99116 {
+			if keys == 99116 || key == 99116 {
+				continue
+			}
+			if key == keys {
 				continue
 			}
 			if (strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", keys, key)) {
 				continue
 			}
+			log.Println("Add connection", key, keys)
 			graph.AddArc(key, keys, temp_network[key][keys].Cst)
 			validate = append(validate, fmt.Sprintf("%d, %d", key, keys))
 		}
@@ -275,6 +279,7 @@ func recalculate_route() {
 			if cons == prod {
 				continue
 			} else {
+				log.Println("Calculate routes", cons, "to", prod)
 				// Search the best path
 				best, err := graph.ShortestSafe(cons, prod)
 				if err != nil {
