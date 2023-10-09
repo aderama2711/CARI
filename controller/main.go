@@ -181,7 +181,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 				cost := uint64(0)
 				if value.N_oi != 0 {
-					cost = uint64(value.Thg+value.Rtt) * (1 - uint64(value.N_in/value.N_oi))
+					cost = uint64(value.Thg+value.Rtt) / (1 - uint64(value.N_in/value.N_oi))
 					temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
 				}
 
@@ -193,7 +193,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		recalculate_route()
+		go recalculate_route()
 
 		log.Println("Registered prefix list : ", prefixlist)
 
@@ -230,8 +230,6 @@ func recalculate_route() {
 	})
 
 	// Insert neighbor data to graph for calculating the route using dijkstra library
-	graph := dijkstra.NewGraph()
-
 	var temp_network map[int]map[int]neighbor
 	var temp_prefixlist map[int][]string
 	var temp_facelist map[uint64]faces
@@ -241,6 +239,8 @@ func recalculate_route() {
 	temp_prefixlist = prefixlist
 	temp_facelist = facelist
 	mutex.Unlock()
+
+	graph := dijkstra.NewGraph()
 
 	log.Println("===== Calculating Routes =====")
 	log.Println("Network : \n", temp_network)
@@ -266,8 +266,8 @@ func recalculate_route() {
 			if (strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", keys, key)) {
 				continue
 			}
-			log.Println("Add connection", key, keys)
-			graph.AddArc(key, keys, temp_network[key][keys].Cst)
+			log.Println("Add connection", key, keys, "cost", (temp_network[key][keys].Cst + temp_network[keys][key].Cst))
+			graph.AddArc(key, keys, (temp_network[key][keys].Cst + temp_network[keys][key].Cst))
 			validate = append(validate, fmt.Sprintf("%d, %d", key, keys))
 		}
 	}
@@ -275,6 +275,9 @@ func recalculate_route() {
 	// Iterate over the prefixlist using a for range loop to calculate every node to producer with prefix
 	for prod, _ := range temp_prefixlist {
 		for cons, _ := range network {
+			if cons == 99116 {
+				continue
+			}
 			// if node is producer, skip
 			if cons == prod {
 				continue
@@ -284,61 +287,61 @@ func recalculate_route() {
 				best, err := graph.ShortestSafe(cons, prod)
 				if err != nil {
 					log.Println("Error occured : ", err)
-					continue
-				}
-				log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
+				} else {
+					log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
-				router := uint64(0)
+					router := uint64(0)
 
-				for key, value := range temp_facelist {
-					if value.Ngb == cons {
-						router = key
-					}
-				}
-
-				// Install prefix and list
-				for _, prefix := range temp_prefixlist[prod] {
-					log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
-
-					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
-					interest.MustBeFresh = true
-					interest.UpdateParamsDigest() //Update SHA256 params
-
-					data, _, _, err := consumer_interest(interest)
-
-					if err != nil {
-						log.Println("Error occured : ", err)
-						continue
+					for key, value := range temp_facelist {
+						if value.Ngb == cons {
+							router = key
+						}
 					}
 
-					log.Println(data)
+					// Install prefix and list
+					for _, prefix := range temp_prefixlist[prod] {
+						log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
+
+						// update route
+						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+						interest.MustBeFresh = true
+						interest.UpdateParamsDigest() //Update SHA256 params
+
+						data, _, _, err := consumer_interest(interest)
+
+						if err != nil {
+							log.Println("Error occured : ", err)
+							continue
+						}
+
+						log.Println(data)
+					}
 				}
 
 				// Search the longest path
 				best, err = graph.LongestSafe(cons, prod)
 				if err != nil {
 					log.Println(err)
-					continue
-				}
-				log.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
+				} else {
+					log.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
-				// Install prefix and list
-				for _, prefix := range temp_prefixlist[prod] {
-					log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
+					// Install prefix and list
+					for _, prefix := range temp_prefixlist[prod] {
+						log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
 
-					// update route
-					interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
-					interest.MustBeFresh = true
-					interest.UpdateParamsDigest() //Update SHA256 params
+						// update route
+						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
+						interest.MustBeFresh = true
+						interest.UpdateParamsDigest() //Update SHA256 params
 
-					data, _, _, err := consumer_interest(interest)
+						data, _, _, err := consumer_interest(interest)
 
-					if err != nil {
-						continue
+						if err != nil {
+							continue
+						}
+
+						log.Println(data)
 					}
-
-					log.Println(data)
 				}
 			}
 		}
@@ -396,7 +399,7 @@ func producer_prefix(wg *sync.WaitGroup) {
 				// fmt.Println(prefixlist)
 				mutex.Unlock()
 
-				recalculate_route()
+				go recalculate_route()
 
 				payload := []byte(string(interest.AppParameters))
 				return ndn.MakeData(interest, payload, time.Duration(10)*time.Millisecond), nil
