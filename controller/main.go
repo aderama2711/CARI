@@ -263,9 +263,9 @@ func recalculate_route() {
 			if key == keys {
 				continue
 			}
-			if (strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", keys, key)) {
-				continue
-			}
+			// if (strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", key, keys))) || strings.Contains(strings.Join(validate, "-"), fmt.Sprintf("%d, %d", keys, key)) {
+			// 	continue
+			// }
 			log.Println("Add connection", key, keys, "cost", (temp_network[key][keys].Cst + temp_network[keys][key].Cst))
 			graph.AddArc(key, keys, (temp_network[key][keys].Cst + temp_network[keys][key].Cst))
 			validate = append(validate, fmt.Sprintf("%d, %d", key, keys))
