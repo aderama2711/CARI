@@ -300,10 +300,10 @@ func recalculate_route() {
 
 					// Install prefix and list
 					for _, prefix := range temp_prefixlist[prod] {
-						log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce, network[cons][best.Path[1]].Cst)
+						log.Println("Installing routes : ", cons, prefix, temp_network[cons][best.Path[1]].Cst, network[cons][best.Path[1]].Cst)
 
 						// update route
-						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, network[cons][best.Path[1]].Cst, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, temp_network[cons][best.Path[1]].Cst, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 						interest.MustBeFresh = true
 						interest.UpdateParamsDigest() //Update SHA256 params
 
