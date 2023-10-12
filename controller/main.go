@@ -300,10 +300,10 @@ func recalculate_route() {
 
 					// Install prefix and list
 					for _, prefix := range temp_prefixlist[prod] {
-						log.Println("Installing routes : ", cons, prefix, (temp_network[cons][best.Path[1]].Cst + temp_network[best.Path[1]][cons].Cst), network[cons][best.Path[1]].Cst)
+						log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
 
 						// update route
-						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, (temp_network[cons][best.Path[1]].Cst+temp_network[best.Path[1]][cons].Cst), network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 						interest.MustBeFresh = true
 						interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -325,18 +325,27 @@ func recalculate_route() {
 				} else {
 					log.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
+					router := uint64(0)
+
+					for key, value := range temp_facelist {
+						if value.Ngb == cons {
+							router = key
+						}
+					}
+
 					// Install prefix and list
 					for _, prefix := range temp_prefixlist[prod] {
-						log.Println("Installing routes : ", cons, prefix, network[cons][best.Path[1]].Fce)
+						log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
 
 						// update route
-						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, cons, network[0][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(cons)].Tkn), ndn.ParseName("update")})
+						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 						interest.MustBeFresh = true
 						interest.UpdateParamsDigest() //Update SHA256 params
 
 						data, _, _, err := consumer_interest(interest)
 
 						if err != nil {
+							log.Println("Error occured : ", err)
 							continue
 						}
 
