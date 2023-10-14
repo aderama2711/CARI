@@ -181,7 +181,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 				cost := int64(0)
 				if value.N_oi != 0 {
-					cost = ((value.Thg+value.Rtt) / (1 - (value.N_in/value.N_oi))) * -1
+					cost = (int64(value.Thg+value.Rtt) / (1 - int64(value.N_in/value.N_oi))) * -1
 					temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 				}
 
@@ -284,72 +284,39 @@ func recalculate_route() {
 			} else {
 				log.Println("Calculate routes", cons, "to", prod)
 				// Search the best path
-				best, err := graph.ShortestSafe(cons, prod)
+				paths, err := graph.ShortestAll(cons, prod)
 				if err != nil {
 					log.Println("Error occured : ", err)
 				} else {
-					log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
+					for _, best := range paths{
+						log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
-					router := uint64(0)
+						router := uint64(0)
 
-					for key, value := range temp_facelist {
-						if value.Ngb == cons {
-							router = key
-						}
-					}
-
-					// Install prefix and list
-					for _, prefix := range temp_prefixlist[prod] {
-						log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
-
-						// update route
-						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
-						interest.MustBeFresh = true
-						interest.UpdateParamsDigest() //Update SHA256 params
-
-						data, _, _, err := consumer_interest(interest)
-
-						if err != nil {
-							log.Println("Error occured : ", err)
-							continue
+						for key, value := range temp_facelist {
+							if value.Ngb == cons {
+								router = key
+							}
 						}
 
-						log.Println(data)
-					}
-				}
+						// Install prefix and list
+						for _, prefix := range temp_prefixlist[prod] {
+							log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
 
-				// Search the longest path
-				best, err = graph.LongestSafe(cons, prod)
-				if err != nil {
-					log.Println(err)
-				} else {
-					log.Println("Longest distance ", cons, prod, best.Distance, " following path ", best.Path)
+							// update route
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest.MustBeFresh = true
+							interest.UpdateParamsDigest() //Update SHA256 params
 
-					router := uint64(0)
+							data, _, _, err := consumer_interest(interest)
 
-					for key, value := range temp_facelist {
-						if value.Ngb == cons {
-							router = key
+							if err != nil {
+								log.Println("Error occured : ", err)
+								continue
+							}
+
+							log.Println(data)
 						}
-					}
-
-					// Install prefix and list
-					for _, prefix := range temp_prefixlist[prod] {
-						log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
-
-						// update route
-						interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
-						interest.MustBeFresh = true
-						interest.UpdateParamsDigest() //Update SHA256 params
-
-						data, _, _, err := consumer_interest(interest)
-
-						if err != nil {
-							log.Println("Error occured : ", err)
-							continue
-						}
-
-						log.Println(data)
 					}
 				}
 			}
