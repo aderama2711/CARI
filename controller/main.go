@@ -179,10 +179,10 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-				cost := uint64(0)
+				cost := int64(0)
 				if value.N_oi != 0 {
-					cost = uint64(value.Thg+value.Rtt) / (1 - uint64(value.N_in/value.N_oi))
-					temp[value.Ngb] = neighbor{Cst: int64(cost), Fce: int(key)}
+					cost = ((value.Thg+value.Rtt) / (1 - (value.N_in/value.N_oi))) * -1
+					temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 				}
 
 			}
