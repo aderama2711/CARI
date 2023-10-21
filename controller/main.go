@@ -181,9 +181,10 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 				cost := int64(0)
 				if value.N_oi != 0 {
-					Thg := 655360000000 / (value.Thg / 1000) 
+					Thg := 655360000000 / (value.Thg / 1000)
 					Rtt := ((value.Rtt * 10000) * 65536) / 1000000
-					cost = (int64((Thg)+(Rtt)) / (1 - int64(value.N_in/value.N_oi)))
+					Rel := ((((1 - value.N_in/value.N_oi) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
+					cost = (int64((Thg)+(Rtt)) / int64(Rel))
 					temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 				}
 
@@ -290,7 +291,7 @@ func recalculate_route() {
 				if err != nil {
 					log.Println("Error occured : ", err)
 				} else {
-					for _, best := range paths{
+					for _, best := range paths {
 						log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
 						router := uint64(0)
