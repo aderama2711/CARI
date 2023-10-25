@@ -95,42 +95,48 @@ func consumer_hello(wg *sync.WaitGroup) {
 			register_route(v.Tkn, 0, int(k))
 
 			log.Print(k, v.Tkn)
-			//send hello interest to every face
-			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
-			interest.MustBeFresh = true
 
-			data, Rtt, Thg, e := consumer_interest(interest)
+			for i := 0; i < 3; i++ {
+				// send hello interest to every face
+				interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+				interest.MustBeFresh = true
 
-			if e != nil {
-				log.Println("Error occured : ", e)
-				continue
+				data, Rtt, Thg, e := consumer_interest(interest)
+
+				if e != nil {
+					log.Println("Error occured : ", e)
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+
+				data = strings.ReplaceAll(data, "A", "")
+
+				// Define a regular expression to match digits
+				reg := regexp.MustCompile("[0-9]+")
+
+				// Find all matches in the input string
+				matches := reg.FindAllString(data, -1)
+
+				// Combine matches to get the numeric string
+				numericString := ""
+				for _, match := range matches {
+					numericString += match
+				}
+
+				idata, err := strconv.Atoi(numericString)
+				if err != nil {
+					log.Printf("IMPOSIBLE!")
+				}
+
+				log.Println(" neighbor : ", idata)
+
+				v.Ngb = idata
+				v.Rtt = Rtt
+				v.Thg = Thg
+				facelist[k] = v
+
+				break
 			}
-
-			data = strings.ReplaceAll(data, "A", "")
-
-			// Define a regular expression to match digits
-			reg := regexp.MustCompile("[0-9]+")
-
-			// Find all matches in the input string
-			matches := reg.FindAllString(data, -1)
-
-			// Combine matches to get the numeric string
-			numericString := ""
-			for _, match := range matches {
-				numericString += match
-			}
-
-			idata, err := strconv.Atoi(numericString)
-			if err != nil {
-				log.Printf("IMPOSIBLE!")
-			}
-
-			log.Println(" neighbor : ", idata)
-
-			v.Ngb = idata
-			v.Rtt = Rtt
-			v.Thg = Thg
-			facelist[k] = v
 
 			time.Sleep(500 * time.Millisecond)
 
