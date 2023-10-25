@@ -285,13 +285,16 @@ func recalculate_route() {
 			if cons == prod {
 				continue
 			} else {
-				log.Println("Calculate routes", cons, "to", prod)
-				// Search the best path
-				paths, err := graph.ShortestAll(cons, prod)
-				if err != nil {
-					log.Println("Error occured : ", err)
-				} else {
-					for _, best := range paths {
+				temp_graph := graph
+
+				for i := 0; i < 3; i++ {
+					log.Println("Calculate routes", cons, "to", prod)
+					// Search the best path
+					best, err := temp_graph.Shortest(cons, prod)
+					if err != nil {
+						log.Println("Error occured : ", err)
+						break
+					} else {
 						log.Println("Shortest distance ", cons, prod, best.Distance, " following path ", best.Path)
 
 						router := uint64(0)
@@ -319,6 +322,16 @@ func recalculate_route() {
 							}
 
 							log.Println(data)
+						}
+					}
+
+					// Delete best route to search another best route
+					err = temp_graph.RemoveArc(cons, best.Path[1])
+					if err != nil {
+						log.Println(cons, "to", best.Path[1], "not found, try reverse")
+						err = temp_graph.RemoveArc(best.Path[1], cons)
+						if err != nil {
+							log.Println(err)
 						}
 					}
 				}
