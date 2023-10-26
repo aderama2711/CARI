@@ -101,11 +101,14 @@ func consumer_hello(wg *sync.WaitGroup) {
 				interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
 				interest.MustBeFresh = true
 
+				log.Println("Sending Interest")
+				log.Println(interest)
 				data, Rtt, Thg, e := consumer_interest(interest)
+				log.Println("The result are here")
 
 				if e != nil {
 					log.Println("Error occured : ", e)
-					time.Sleep(500 * time.Millisecond)
+					continue
 				} else {
 					data = strings.ReplaceAll(data, "A", "")
 

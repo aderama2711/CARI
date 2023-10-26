@@ -260,7 +260,7 @@ func recalculate_route() {
 	// Iterate over the network map using a for range loop to create vertices
 	for key, _ := range temp_network {
 		for keys, _ := range temp_network[key] {
-			if keys == 99116 || key == 99116 {
+			if keys == 99116 || key == 99116 || key == 0 || keys == 0 {
 				continue
 			}
 			if key == keys {
