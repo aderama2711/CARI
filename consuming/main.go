@@ -480,7 +480,7 @@ func parse_facelist(raw []byte) {
 					outi = get_data(raw[pointer : pointer+length])
 					// fmt.Println("outi: ", outi)
 					pointer += length
-				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "97" {
+				} else if data := hex.EncodeToString([]byte{raw[pointer]}); data == "9a" {
 					// fmt.Println("data:", data)
 					pointer++
 					octet := check_type([]byte{raw[pointer]})
