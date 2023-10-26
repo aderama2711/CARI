@@ -190,6 +190,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 					v.Thg = Thg
 					facelist[k] = v
 
+					delete(recheck_facelist, k)
+
 					time.Sleep(500 * time.Millisecond)
 
 				}
