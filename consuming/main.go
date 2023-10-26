@@ -105,37 +105,36 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 				if e != nil {
 					log.Println("Error occured : ", e)
-					time.Sleep(100 * time.Millisecond)
-					continue
+					time.Sleep(500 * time.Millisecond)
+				} else {
+					data = strings.ReplaceAll(data, "A", "")
+
+					// Define a regular expression to match digits
+					reg := regexp.MustCompile("[0-9]+")
+
+					// Find all matches in the input string
+					matches := reg.FindAllString(data, -1)
+
+					// Combine matches to get the numeric string
+					numericString := ""
+					for _, match := range matches {
+						numericString += match
+					}
+
+					idata, err := strconv.Atoi(numericString)
+					if err != nil {
+						log.Printf("IMPOSIBLE!")
+					}
+
+					log.Println(" neighbor : ", idata)
+
+					v.Ngb = idata
+					v.Rtt = Rtt
+					v.Thg = Thg
+					facelist[k] = v
+
+					break
 				}
-
-				data = strings.ReplaceAll(data, "A", "")
-
-				// Define a regular expression to match digits
-				reg := regexp.MustCompile("[0-9]+")
-
-				// Find all matches in the input string
-				matches := reg.FindAllString(data, -1)
-
-				// Combine matches to get the numeric string
-				numericString := ""
-				for _, match := range matches {
-					numericString += match
-				}
-
-				idata, err := strconv.Atoi(numericString)
-				if err != nil {
-					log.Printf("IMPOSIBLE!")
-				}
-
-				log.Println(" neighbor : ", idata)
-
-				v.Ngb = idata
-				v.Rtt = Rtt
-				v.Thg = Thg
-				facelist[k] = v
-
-				break
 			}
 
 			time.Sleep(500 * time.Millisecond)
