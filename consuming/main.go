@@ -90,26 +90,80 @@ func consumer_hello(wg *sync.WaitGroup) {
 		log.Println("Facelist : ", facelist)
 
 		log.Println("===== Hello Procedure =====")
+
+		var recheck_facelist map[uint64]faces
+		recheck_facelist = make(map[uint64]faces)
+
 		//create route
 		for k, v := range facelist {
 			register_route(v.Tkn, 0, int(k))
 
 			log.Print(k, v.Tkn)
+			// send hello interest to every face
+			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+			interest.MustBeFresh = true
 
-			for i := 0; i < 3; i++ {
-				// send hello interest to every face
-				interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
-				interest.MustBeFresh = true
+			log.Println("Sending Interest")
+			log.Println(interest)
+			data, Rtt, Thg, e := consumer_interest(interest)
+			log.Println("The result are here")
 
-				log.Println("Sending Interest")
-				log.Println(interest)
-				data, Rtt, Thg, e := consumer_interest(interest)
-				log.Println("The result are here")
+			if e != nil {
+				log.Println("Error occured : ", e)
+				recheck_facelist[k] = v
+			}
+			data = strings.ReplaceAll(data, "A", "")
 
-				if e != nil {
-					log.Println("Error occured : ", e)
-					continue
-				} else {
+			// Define a regular expression to match digits
+			reg := regexp.MustCompile("[0-9]+")
+
+			// Find all matches in the input string
+			matches := reg.FindAllString(data, -1)
+
+			// Combine matches to get the numeric string
+			numericString := ""
+			for _, match := range matches {
+				numericString += match
+			}
+
+			idata, err := strconv.Atoi(numericString)
+			if err != nil {
+				log.Printf("IMPOSIBLE!")
+			}
+
+			log.Println(" neighbor : ", idata)
+
+			v.Ngb = idata
+			v.Rtt = Rtt
+			v.Thg = Thg
+			facelist[k] = v
+
+			time.Sleep(500 * time.Millisecond)
+
+		}
+
+		log.Println("Hello Retries")
+
+		// retries
+		for i := 0; i < 2; i++ {
+			if len(recheck_facelist) != 0 {
+				for k, v := range recheck_facelist {
+					register_route(v.Tkn, 0, int(k))
+
+					log.Print(k, v.Tkn)
+					// send hello interest to every face
+					interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+					interest.MustBeFresh = true
+
+					log.Println("Sending Interest")
+					log.Println(interest)
+					data, Rtt, Thg, e := consumer_interest(interest)
+					log.Println("The result are here")
+
+					if e != nil {
+						log.Println("Error occured : ", e)
+						recheck_facelist[k] = v
+					}
 					data = strings.ReplaceAll(data, "A", "")
 
 					// Define a regular expression to match digits
@@ -136,14 +190,16 @@ func consumer_hello(wg *sync.WaitGroup) {
 					v.Thg = Thg
 					facelist[k] = v
 
-					break
+					time.Sleep(500 * time.Millisecond)
+
 				}
+			} else {
+				break
 			}
-
-			time.Sleep(500 * time.Millisecond)
-
 		}
+
 		log.Println("Updated Facelist : ", facelist)
+
 		time.Sleep(interval)
 	}
 }
