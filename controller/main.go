@@ -278,7 +278,7 @@ func recalculate_route() {
 	// Iterate over the prefixlist using a for range loop to calculate every node to producer with prefix
 	for prod, _ := range temp_prefixlist {
 		for cons, _ := range network {
-			if cons == 99116 {
+			if cons == 99116 && cons == 0 {
 				continue
 			}
 			// if node is producer, skip
