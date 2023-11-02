@@ -38,7 +38,7 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	wg.Add(3)
+	wg.Add(4)
 
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
@@ -50,8 +50,20 @@ func main() {
 
 	// producer for route update (for controller)
 	go producer_update("/update", 100, &wg)
+	time.Sleep(500 * time.Millisecond)
+
+	go updatepl(&wg)
 	wg.Wait()
 
+}
+
+func updatepl(wg *sync.WaitGroup) {
+	defer wg.Done()
+	interval := 15 * time.Second
+	for {
+		update_facelist()
+		time.Sleep(interval)
+	}
 }
 
 func consumer_hello(wg *sync.WaitGroup) {
@@ -83,6 +95,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 		log.Printf("uplink state changes to %s", l3face.State())
 	})
 
+	time.Sleep(1 * time.Second)
+
 	interval := 60 * time.Second
 	for {
 		//update facelist
@@ -111,6 +125,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 			if e != nil {
 				log.Println("Error occured : ", e)
 				recheck_facelist[k] = v
+				continue
 			}
 			data = strings.ReplaceAll(data, "A", "")
 
@@ -163,6 +178,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 					if e != nil {
 						log.Println("Error occured : ", e)
 						recheck_facelist[k] = v
+						continue
 					}
 					data = strings.ReplaceAll(data, "A", "")
 
