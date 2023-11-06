@@ -277,7 +277,7 @@ func recalculate_route() {
 
 	// Iterate over the prefixlist using a for range loop to calculate every node to producer with prefix
 	for prod, _ := range temp_prefixlist {
-		for cons, _ := range network {
+		for cons, _ := range temp_network {
 			if cons == 99116 && cons == 0 {
 				continue
 			}
@@ -286,6 +286,11 @@ func recalculate_route() {
 				continue
 			} else {
 				temp_graph := graph
+
+				n := 3
+				if len(temp_network[cons]) < n {
+					n = len(temp_network[cons])
+				}
 
 				for i := 0; i < 3; i++ {
 					log.Println("Calculate routes", cons, "to", prod)
@@ -307,10 +312,10 @@ func recalculate_route() {
 
 						// Install prefix and list
 						for _, prefix := range temp_prefixlist[prod] {
-							log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
+							log.Println("Installing routes : ", cons, prefix, best.Distance, temp_network[cons][best.Path[1]].Cst)
 
 							// update route
-							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 							interest.MustBeFresh = true
 							interest.UpdateParamsDigest() //Update SHA256 params
 
