@@ -310,7 +310,7 @@ func recalculate_route() {
 							log.Println("Installing routes : ", cons, prefix, best.Distance, network[cons][best.Path[1]].Cst)
 
 							// update route
-							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce, 60000)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 							interest.MustBeFresh = true
 							interest.UpdateParamsDigest() //Update SHA256 params
 
