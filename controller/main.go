@@ -289,10 +289,10 @@ func recalculate_route() {
 
 				n := 3
 				if len(temp_network[cons]) < n {
-					n = len(temp_network[cons])
+					n = len(temp_network[cons]) - 1
 				}
 
-				for i := 0; i < 3; i++ {
+				for i := 0; i < n; i++ {
 					log.Println("Calculate routes", cons, "to", prod)
 					// Search the best path
 					best, err := temp_graph.Shortest(cons, prod)
