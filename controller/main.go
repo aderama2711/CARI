@@ -303,6 +303,12 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 						}
 
 					}
+
+					if len(temp) == 0 {
+						recheck_facelist[k] = v
+						continue
+					}
+
 					mutex.Lock()
 					network[v.Ngb] = temp
 					mutex.Unlock()
