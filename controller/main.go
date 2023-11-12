@@ -292,6 +292,9 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					var temp map[int]neighbor
 					temp = make(map[int]neighbor)
 					for key, value := range temp_fl {
+						if value.Ngb == 0 {
+							continue
+						}
 						// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 						if value.N_oi == 0 {
 							value.N_oi = 1
