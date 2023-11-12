@@ -146,6 +146,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 		}
 
+		time.Sleep(1 * time.Second)
+
 		log.Println("Hello Retries")
 
 		// retries
@@ -203,6 +205,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 			} else {
 				break
 			}
+			time.Sleep(1 * time.Second)
 		}
 
 		log.Println("Updated Facelist : ", facelist)

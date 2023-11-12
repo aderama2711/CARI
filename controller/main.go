@@ -101,6 +101,10 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 		log.Println("Facelist : ", facelist)
 
 		log.Println("===== Hello Procedure =====")
+
+		var recheck_facelist map[uint64]faces
+		recheck_facelist = make(map[uint64]faces)
+
 		//create route
 		for k, v := range facelist {
 			register_route(v.Tkn, 0, int(k))
@@ -114,6 +118,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 
 			if e != nil {
 				log.Println("Error occured : ", e)
+				recheck_facelist[k] = v
 				continue
 			}
 
@@ -146,7 +151,66 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			time.Sleep(500 * time.Millisecond)
 		}
 
+		for i := 0; i < 2; i++ {
+			if len(recheck_facelist) != 0 {
+				for k, v := range recheck_facelist {
+					register_route(v.Tkn, 0, int(k))
+
+					log.Print(k, v.Tkn)
+					// send hello interest to every face
+					interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
+					interest.MustBeFresh = true
+
+					log.Println("Sending Interest")
+					log.Println(interest)
+					data, Rtt, Thg, e := consumer_interest(interest)
+					log.Println("The result are here")
+
+					if e != nil {
+						log.Println("Error occured : ", e)
+						recheck_facelist[k] = v
+						continue
+					}
+					data = strings.ReplaceAll(data, "A", "")
+
+					// Define a regular expression to match digits
+					reg := regexp.MustCompile("[0-9]+")
+
+					// Find all matches in the input string
+					matches := reg.FindAllString(data, -1)
+
+					// Combine matches to get the numeric string
+					numericString := ""
+					for _, match := range matches {
+						numericString += match
+					}
+
+					idata, err := strconv.Atoi(numericString)
+					if err != nil {
+						log.Printf("IMPOSIBLE!")
+					}
+
+					log.Println(" neighbor : ", idata)
+
+					v.Ngb = idata
+					v.Rtt = Rtt
+					v.Thg = Thg
+					facelist[k] = v
+
+					delete(recheck_facelist, k)
+
+					time.Sleep(500 * time.Millisecond)
+
+				}
+			} else {
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+
 		log.Println("Updated Facelist : ", facelist)
+
+		recheck_facelist = make(map[uint64]faces)
 
 		log.Println("===== Request Route Info =====")
 		//request route info
@@ -161,6 +225,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			data, _, _, e := consumer_interest(interest)
 
 			if e != nil {
+				recheck_facelist[k] = v
 				continue
 			}
 
@@ -194,6 +259,63 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			mutex.Unlock()
 
 			time.Sleep(500 * time.Millisecond)
+		}
+
+		for i := 0; i < 2; i++ {
+			if len(recheck_facelist) != 0 {
+				for k, v := range recheck_facelist {
+
+					log.Print(k, v.Tkn)
+
+					//request route info interest to every face
+					interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("info")})
+					interest.MustBeFresh = true
+
+					data, _, _, e := consumer_interest(interest)
+
+					if e != nil {
+						recheck_facelist[k] = v
+						continue
+					}
+
+					log.Println(" route info : \n", data)
+
+					// Create temp map for json string -> map
+					var temp_fl map[uint64]faces
+
+					err := json.Unmarshal([]byte(data), &temp_fl)
+					if err != nil {
+						log.Println("Error: ", err)
+					}
+
+					// convert facelist to network map
+					var temp map[int]neighbor
+					temp = make(map[int]neighbor)
+					for key, value := range temp_fl {
+						// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
+						cost := int64(0)
+						if value.N_oi != 0 {
+							Thg := 655360000000 / (value.Thg / 1000)
+							Rtt := ((value.Rtt * 10000) * 65536) / 1000000
+							Rel := ((((1 - value.N_in/value.N_oi) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
+							cost = (int64((Thg)+(Rtt)) / int64(Rel))
+							temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
+						}
+
+					}
+					mutex.Lock()
+					network[v.Ngb] = temp
+					mutex.Unlock()
+
+					delete(recheck_facelist, k)
+
+					time.Sleep(500 * time.Millisecond)
+
+				}
+			} else {
+				break
+			}
+			time.Sleep(1 * time.Second)
 		}
 
 		go recalculate_route()
@@ -238,9 +360,9 @@ func recalculate_route() {
 	var temp_facelist map[uint64]faces
 
 	mutex.Lock()
-	log.Println("Network : \n", temp_network)
-	log.Println("Prefix : \n", temp_prefixlist)
-	log.Println("Face : \n", temp_facelist)
+	log.Println("Network : \n", network)
+	log.Println("Prefix : \n", prefixlist)
+	log.Println("Face : \n", facelist)
 	temp_network = network
 	temp_prefixlist = prefixlist
 	temp_facelist = facelist
