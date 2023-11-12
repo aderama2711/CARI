@@ -238,6 +238,9 @@ func recalculate_route() {
 	var temp_facelist map[uint64]faces
 
 	mutex.Lock()
+	log.Println("Network : \n", temp_network)
+	log.Println("Prefix : \n", temp_prefixlist)
+	log.Println("Face : \n", temp_facelist)
 	temp_network = network
 	temp_prefixlist = prefixlist
 	temp_facelist = facelist
