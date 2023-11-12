@@ -38,7 +38,7 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	wg.Add(4)
+	wg.Add(3)
 
 	// consumer for hello procedure (to neighbor)
 	go consumer_hello(&wg)
@@ -51,19 +51,8 @@ func main() {
 	// producer for route update (for controller)
 	go producer_update("/update", 100, &wg)
 	time.Sleep(500 * time.Millisecond)
-
-	go updatepl(&wg)
 	wg.Wait()
 
-}
-
-func updatepl(wg *sync.WaitGroup) {
-	defer wg.Done()
-	interval := 15 * time.Second
-	for {
-		update_facelist()
-		time.Sleep(interval)
-	}
 }
 
 func consumer_hello(wg *sync.WaitGroup) {
