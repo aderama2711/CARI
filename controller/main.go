@@ -525,32 +525,32 @@ func recalculate_route() {
 						}
 					}
 				}
+			}
+		}
+	}
 
-				for k1, _ := range registered_route { // for each router
-					for k2, _ := range registered_route[k1] { // for each face
-						for k3, ok := range registered_route[k1][k2] { //for each prefix
-							if ok {
-								continue
-							}
-
-							log.Println("Remove routes : ", k3, k2, "from", k1)
-
-							interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(k1)].Tkn), ndn.ParseName("remove")})
-							interest.MustBeFresh = true
-							interest.UpdateParamsDigest() //Update SHA256 params
-
-							data, _, _, err := consumer_interest(interest)
-
-							if err != nil {
-								log.Println("Error occured : ", err)
-
-								continue
-							}
-
-							log.Println(data)
-						}
-					}
+	for k1, _ := range registered_route { // for each router
+		for k2, _ := range registered_route[k1] { // for each face
+			for k3, ok := range registered_route[k1][k2] { //for each prefix
+				if ok {
+					continue
 				}
+
+				log.Println("Remove routes : ", k3, k2, "from", k1)
+
+				interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(k1)].Tkn), ndn.ParseName("remove")})
+				interest.MustBeFresh = true
+				interest.UpdateParamsDigest() //Update SHA256 params
+
+				data, _, _, err := consumer_interest(interest)
+
+				if err != nil {
+					log.Println("Error occured : ", err)
+
+					continue
+				}
+
+				log.Println(data)
 			}
 		}
 	}
