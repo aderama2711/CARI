@@ -426,6 +426,14 @@ func recalculate_route() {
 			} else {
 				temp_graph := graph
 
+				for k1, _ := range registered_route { // for each router
+					for k2, _ := range registered_route[k1] { // for each face
+						for k3, _ := range registered_route[k1][k2] { //for each prefix
+							registered_route[k1][k2][k3] = false
+						}
+					}
+				}
+
 				n := 3
 				if len(temp_network[cons]) < n {
 					n = len(temp_network[cons]) - 1
@@ -461,16 +469,47 @@ func recalculate_route() {
 							data, _, _, err := consumer_interest(interest)
 
 							if err != nil {
+								if _, ok := registered_route[cons]; ok {
+									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
+										if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
+											registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
+										} else {
+											eprefix := map[string]bool{prefix: false}
+											registered_route[cons][temp_network[cons][best.Path[1]].Fce] = eprefix
+										}
+									} else {
+										eprefix := map[string]bool{prefix: false}
+										eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+										registered_route[cons] = eface
+									}
+								} else {
+									eprefix := map[string]bool{prefix: false}
+									eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+									registered_route[cons] = eface
+								}
 								log.Println("Error occured : ", err)
-								eprefix := map[string]bool{prefix: false}
-								eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-								registered_route[cons] = eface
+
 								continue
 							}
 
-							eprefix := map[string]bool{prefix: true}
-							eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-							registered_route[cons] = eface
+							if _, ok := registered_route[cons]; ok {
+								if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
+									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
+										registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
+									} else {
+										eprefix := map[string]bool{prefix: true}
+										registered_route[cons][temp_network[cons][best.Path[1]].Fce] = eprefix
+									}
+								} else {
+									eprefix := map[string]bool{prefix: true}
+									eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+									registered_route[cons] = eface
+								}
+							} else {
+								eprefix := map[string]bool{prefix: true}
+								eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+								registered_route[cons] = eface
+							}
 
 							log.Println(data)
 						}
