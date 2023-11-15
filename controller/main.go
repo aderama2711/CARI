@@ -23,12 +23,9 @@ import (
 )
 
 type faces struct {
-	Ngb  int     `json:"Ngb"`
-	Rtt  float64 `json:"Rtt"`
-	Thg  float64 `json:"Thg"`
-	Tkn  string  `json:"Tkn"`
-	N_oi uint64  `json:"N_oi"`
-	N_in uint64  `json:"N_in"`
+	Ngb int    `json:"Ngb"`
+	Tkn string `json:"Tkn"`
+	Cst uint64 `json:"Cst"`
 }
 
 type neighbor struct {
@@ -114,7 +111,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			interest := ndn.MakeInterest(ndn.ParseName("hello"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("hello")})
 			interest.MustBeFresh = true
 
-			data, rtt, thg, e := consumer_interest(interest)
+			data, e := consumer_interest(interest)
 
 			if e != nil {
 				log.Println("Error occured : ", e)
@@ -144,8 +141,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			log.Println(" neighbor : ", idata)
 
 			v.Ngb = idata
-			v.Rtt = rtt
-			v.Thg = thg
+
 			facelist[k] = v
 
 			time.Sleep(500 * time.Millisecond)
@@ -163,7 +159,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 
 					log.Println("Sending Interest")
 					log.Println(interest)
-					data, Rtt, Thg, e := consumer_interest(interest)
+					data, e := consumer_interest(interest)
 					log.Println("The result are here")
 
 					if e != nil {
@@ -193,8 +189,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					log.Println(" neighbor : ", idata)
 
 					v.Ngb = idata
-					v.Rtt = Rtt
-					v.Thg = Thg
+
 					facelist[k] = v
 
 					delete(recheck_facelist, k)
@@ -222,7 +217,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("info")})
 			interest.MustBeFresh = true
 
-			data, _, _, e := consumer_interest(interest)
+			data, e := consumer_interest(interest)
 
 			if e != nil {
 				recheck_facelist[k] = v
@@ -243,15 +238,8 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			var temp map[int]neighbor
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
-				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-				if value.N_oi == 0 {
-					value.N_oi = 1
-				}
 				cost := int64(0)
-				Thg := 655360000000 / (value.Thg / 1000)
-				Rtt := ((value.Rtt * 10000) * 65536) / 1000000
-				Rel := ((((1 - value.N_in/value.N_oi + 1) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
-				cost = (int64((Thg)+(Rtt)) / int64(Rel))
+				cost = (int64(value.Cst))
 				temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 
 			}
@@ -272,7 +260,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					interest := ndn.MakeInterest(ndn.ParseName("info"), ndn.ForwardingHint{ndn.ParseName(v.Tkn), ndn.ParseName("info")})
 					interest.MustBeFresh = true
 
-					data, _, _, e := consumer_interest(interest)
+					data, e := consumer_interest(interest)
 
 					if e != nil {
 						recheck_facelist[k] = v
@@ -293,18 +281,8 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					var temp map[int]neighbor
 					temp = make(map[int]neighbor)
 					for key, value := range temp_fl {
-						if value.Ngb == 0 {
-							continue
-						}
-						// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
-						if value.N_oi == 0 {
-							value.N_oi = 1
-						}
 						cost := int64(0)
-						Thg := 655360000000 / (value.Thg / 1000)
-						Rtt := ((value.Rtt * 10000) * 65536) / 1000000
-						Rel := ((((1 - value.N_in/value.N_oi + 1) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
-						cost = (int64((Thg)+(Rtt)) / int64(Rel))
+						cost = (int64(value.Cst))
 						temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 
 					}
@@ -452,7 +430,7 @@ func recalculate_route() {
 							interest.MustBeFresh = true
 							interest.UpdateParamsDigest() //Update SHA256 params
 
-							data, _, _, err := consumer_interest(interest)
+							data, err := consumer_interest(interest)
 
 							if err != nil {
 								log.Println("Error occured : ", err)
@@ -711,39 +689,26 @@ func producer_prefix(wg *sync.WaitGroup) {
 // 	}
 // }
 
-func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
+func consumer_interest(Interest ndn.Interest) (content string, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
 
-	t0 := time.Now()
-
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
-
-	raw_Rtt := time.Since(t0)
-
-	Rtt = float64(raw_Rtt / time.Millisecond)
-
-	// fmt.Println(Rtt)
 
 	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		if Rtt != 0 {
-			Thg = float64(len(content)) / float64(Rtt/1000)
-		} else {
-			Thg = 0
-		}
 
 	} else {
 		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
-		return content, 0, 0, e
+		return content, e
 	}
 
-	return content, Rtt, Thg, nil
+	return content, nil
 }
 
 func update_facelist() {
@@ -835,6 +800,10 @@ func parse_facelist(raw []byte) {
 
 	log.Println("===== Update Facelist =====")
 	pointer = 0
+
+	_ = innack
+	_ = outi
+
 	for pointer != uint64(len(raw)) {
 		// check per face
 		if data := hex.EncodeToString([]byte{raw[pointer]}); data == "80" {
@@ -924,10 +893,10 @@ func parse_facelist(raw []byte) {
 				mutex.Lock()
 				if _, ok := facelist[faceid]; ok {
 					log.Println("Use existing")
-					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+					facelist[faceid] = faces{Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Cst: facelist[faceid].Cst}
 				} else {
 					log.Println("Create new")
-					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+					facelist[faceid] = faces{Tkn: stoken}
 				}
 				mutex.Unlock()
 			} else {

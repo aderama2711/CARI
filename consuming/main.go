@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,20 +24,59 @@ import (
 )
 
 type faces struct {
-	Ngb  int     `json:"Ngb"`
-	Rtt  float64 `json:"Rtt"`
-	Thg  float64 `json:"Thg"`
-	Tkn  string  `json:"Tkn"`
-	N_oi uint64  `json:"N_oi"`
-	N_in uint64  `json:"N_in"`
+	Ngb int    `json:"Ngb"`
+	Tkn string `json:"Tkn"`
+	Cst uint64 `json:"Cst"`
 }
+
+var cost map[int]uint64
 
 var facelist map[uint64]faces
 
 var mutex sync.Mutex
 
+func readconfg() {
+	// Read cost configuration file
+	f, err := os.Open("thermopylae.txt")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "neighbor | cost") {
+			continue
+		} else {
+			data := strings.Split(line, " | ")
+			u, err := strconv.ParseUint(data[1], 10, 64)
+			if err != nil {
+				log.Fatal("Cost must integer")
+			}
+
+			asciicontent := ""
+			for _, char := range data[0] {
+				asciicontent += fmt.Sprintf("%d", char)
+			}
+
+			as, err := strconv.Atoi(data[1])
+
+			cost[as] = u
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	facelist = make(map[uint64]faces)
+	cost = make(map[string]uint64)
 
 	var wg sync.WaitGroup
 
@@ -108,7 +150,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 			log.Println("Sending Interest")
 			log.Println(interest)
-			data, Rtt, Thg, e := consumer_interest(interest)
+			data, e := consumer_interest(interest)
 			log.Println("The result are here")
 
 			if e != nil {
@@ -138,8 +180,9 @@ func consumer_hello(wg *sync.WaitGroup) {
 			log.Println(" neighbor : ", idata)
 
 			v.Ngb = idata
-			v.Rtt = Rtt
-			v.Thg = Thg
+
+			//TODO : implement Cost from file
+
 			facelist[k] = v
 
 			time.Sleep(500 * time.Millisecond)
@@ -163,7 +206,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 					log.Println("Sending Interest")
 					log.Println(interest)
-					data, Rtt, Thg, e := consumer_interest(interest)
+					data, e := consumer_interest(interest)
 					log.Println("The result are here")
 
 					if e != nil {
@@ -195,8 +238,12 @@ func consumer_hello(wg *sync.WaitGroup) {
 					log.Println(" neighbor : ", idata)
 
 					v.Ngb = idata
-					v.Rtt = Rtt
-					v.Thg = Thg
+
+					// Add cost from file
+					if val, ok := cost[data]; ok {
+						//do something here
+					}
+
 					facelist[k] = v
 
 					delete(recheck_facelist, k)
@@ -381,39 +428,26 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 	}
 }
 
-func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
+func consumer_interest(Interest ndn.Interest) (content string, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
-
-	t0 := time.Now()
 
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	raw_Rtt := time.Since(t0)
-
-	Rtt = float64(raw_Rtt / time.Millisecond)
-
-	// fmt.Println(Rtt)
-
-	if e == nil {
+	if e != nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
 		// fmt.Printf("%6.2f%% D %s\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), content)
-		if Rtt != 0 {
-			Thg = float64(len(content)) / float64(Rtt/1000)
-		} else {
-			Thg = 0
-		}
 
 	} else {
 		// nDataL, nErrorsL := nData.Load(), nErrors.Add(1)
 		// fmt.Printf("%6.2f%% E %v\n", 100*float64(nDataL)/float64(nDataL+nErrorsL), e)
-		return content, 0, 0, e
+		return content, e
 	}
 
-	return content, Rtt, Thg, nil
+	return content, nil
 }
 
 func update_facelist() {
@@ -504,6 +538,9 @@ func parse_facelist(raw []byte) {
 		outi     uint64
 		uri      string
 	)
+
+	_ = innack
+	_ = outi
 
 	log.Println("===== Update Facelist =====")
 	pointer = 0
@@ -596,10 +633,10 @@ func parse_facelist(raw []byte) {
 				mutex.Lock()
 				if _, ok := facelist[faceid]; ok {
 					log.Println("Use existing")
-					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Rtt: facelist[faceid].Rtt, Thg: facelist[faceid].Thg}
+					facelist[faceid] = faces{Tkn: facelist[faceid].Tkn, Ngb: facelist[faceid].Ngb, Cst: facelist[faceid].Cst}
 				} else {
 					log.Println("Create new")
-					facelist[faceid] = faces{N_oi: outi, N_in: innack, Tkn: stoken}
+					facelist[faceid] = faces{Tkn: stoken}
 				}
 				mutex.Unlock()
 			} else {

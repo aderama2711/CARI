@@ -1,2 +1,2 @@
-# CARI
-Code for Centralized Adaptive Routing (CARI) mechanism
+# CLSR
+Code for Centralized Link State Routing (CLSR) mechanism
