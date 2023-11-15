@@ -464,11 +464,15 @@ func recalculate_route() {
 
 							if err != nil {
 								log.Println("Error occured : ", err)
-								registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
+								eprefix := map[string]bool{prefix: false}
+								eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+								registered_route[cons] = eface
 								continue
 							}
 
-							registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = true
+							eprefix := map[string]bool{prefix: true}
+							eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
+							registered_route[cons] = eface
 
 							log.Println(data)
 						}
