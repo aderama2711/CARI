@@ -174,6 +174,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					if e != nil {
 						log.Println("Error occured : ", e)
 						recheck_facelist[k] = v
+						v.Ngb = 0
 						continue
 					}
 					data = strings.ReplaceAll(data, "A", "")
@@ -220,6 +221,9 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 		log.Println("===== Request Route Info =====")
 		//request route info
 		for k, v := range facelist {
+			if v.Ngb == 0 {
+				continue
+			}
 
 			log.Print(k, v.Tkn)
 
@@ -248,9 +252,6 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			var temp map[int]neighbor
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
-				if value.Ngb == 0 {
-					continue
-				}
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 				if value.N_oi == 0 {
 					value.N_oi = 1
@@ -301,9 +302,6 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					var temp map[int]neighbor
 					temp = make(map[int]neighbor)
 					for key, value := range temp_fl {
-						if value.Ngb == 0 {
-							continue
-						}
 						// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 						if value.N_oi == 0 {
 							value.N_oi = 1
@@ -496,7 +494,7 @@ func recalculate_route() {
 								continue
 							}
 
-							log.Println("Remove routes : ", k3, k2, " from ", k1)
+							log.Println("Remove routes : ", k3, k2, "from", k1)
 
 							interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(k1)].Tkn), ndn.ParseName("remove")})
 							interest.MustBeFresh = true
