@@ -42,7 +42,11 @@ var facelist map[uint64]faces
 // prefixlist for saving producer of prefixes
 var prefixlist map[int][]string
 
+// network map
 var network map[int]map[int]neighbor
+
+// registered route
+var registered_route map[int]map[int]map[string]bool
 
 var mutex sync.Mutex
 
@@ -50,6 +54,7 @@ func main() {
 	facelist = make(map[uint64]faces)
 	prefixlist = make(map[int][]string)
 	network = map[int]map[int]neighbor{}
+	registered_route = make(map[int]map[int]map[string]bool)
 
 	var wg sync.WaitGroup
 
@@ -243,6 +248,9 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 			var temp map[int]neighbor
 			temp = make(map[int]neighbor)
 			for key, value := range temp_fl {
+				if value.Ngb == 0 {
+					continue
+				}
 				// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 				if value.N_oi == 0 {
 					value.N_oi = 1
@@ -456,8 +464,11 @@ func recalculate_route() {
 
 							if err != nil {
 								log.Println("Error occured : ", err)
+								registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
 								continue
 							}
+
+							registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = true
 
 							log.Println(data)
 						}
@@ -470,6 +481,32 @@ func recalculate_route() {
 						err = temp_graph.RemoveArc(best.Path[1], cons)
 						if err != nil {
 							log.Println(err)
+						}
+					}
+				}
+
+				for k1, _ := range registered_route { // for each router
+					for k2, _ := range registered_route[k1] { // for each face
+						for k3, ok := range registered_route[k1][k2] { //for each prefix
+							if ok {
+								continue
+							}
+
+							log.Println("Remove routes : ", k3, k2, " from ", k1)
+
+							interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(k1)].Tkn), ndn.ParseName("remove")})
+							interest.MustBeFresh = true
+							interest.UpdateParamsDigest() //Update SHA256 params
+
+							data, _, _, err := consumer_interest(interest)
+
+							if err != nil {
+								log.Println("Error occured : ", err)
+
+								continue
+							}
+
+							log.Println(data)
 						}
 					}
 				}

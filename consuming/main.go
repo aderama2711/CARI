@@ -51,6 +51,11 @@ func main() {
 	// producer for route update (for controller)
 	go producer_update("/update", 100, &wg)
 	time.Sleep(500 * time.Millisecond)
+
+	// producer for route remove (for controller)
+	go producer_remove("/remove", 100, &wg)
+	time.Sleep(500 * time.Millisecond)
+
 	wg.Wait()
 
 }
@@ -381,6 +386,62 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 	}
 }
 
+func producer_remove(name string, fresh int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var (
+		client mgmt.Client
+		face   mgmt.Face
+		fwFace l3.FwFace
+	)
+
+	client, e := nfdmgmt.New()
+
+	face, e = client.OpenFace()
+	if e != nil {
+		log.Println("Error occured : ", e)
+	}
+	l3face := face.Face()
+
+	fw := l3.GetDefaultForwarder()
+	if fwFace, e = fw.AddFace(l3face); e != nil {
+		log.Println("Error occured : ", e)
+	}
+	fwFace.AddRoute(ndn.Name{})
+	fw.AddReadvertiseDestination(face)
+
+	log.Printf("uplink opened, state is %s", l3face.State())
+	l3face.OnStateChange(func(st l3.TransportState) {
+		log.Printf("uplink state changes to %s", l3face.State())
+	})
+
+	var signer ndn.Signer
+
+	for {
+		ctx := context.Background()
+		p, e := endpoint.Produce(ctx, endpoint.ProducerOptions{
+			Prefix:      ndn.ParseName(name),
+			NoAdvertise: false,
+			Handler: func(ctx context.Context, interest ndn.Interest) (ndn.Data, error) {
+				// Get App Param
+				log.Println("Payload = " + string(interest.AppParameters))
+				splits := strings.Split(string(interest.AppParameters), ",")
+				face, _ := strconv.Atoi(splits[1])
+				unregister_route(splits[0], face)
+				payload := []byte(string(interest.AppParameters))
+				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
+			},
+			DataSigner: signer,
+		})
+
+		if e != nil {
+			log.Println("Error occured : ", e)
+		}
+
+		<-ctx.Done()
+		defer p.Close()
+	}
+}
+
 func consumer_interest(Interest ndn.Interest) (content string, Rtt float64, Thg float64, e error) {
 	// seqNum := rand.Uint64()
 	// var nData, nErrors atomic.Int64
@@ -454,6 +515,26 @@ func register_route(name string, cost int, faceid int) {
 		Name:   ndn.ParseName(name),
 		Origin: 0,
 		Cost:   cost,
+		FaceID: faceid,
+	})
+
+	if e != nil {
+		log.Println("Error occured : ", e)
+	}
+	if cr.StatusCode != 200 {
+		log.Println("unexpected response status %d", cr.StatusCode)
+	} else {
+		log.Println("Route registered")
+	}
+}
+
+func unregister_route(name string, faceid int) {
+
+	c, _ := nfdmgmt.New()
+
+	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibUnregisterCommand{
+		Name:   ndn.ParseName(name),
+		Origin: 0,
 		FaceID: faceid,
 	})
 
