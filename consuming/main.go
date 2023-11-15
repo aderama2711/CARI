@@ -169,6 +169,8 @@ func consumer_hello(wg *sync.WaitGroup) {
 					if e != nil {
 						log.Println("Error occured : ", e)
 						recheck_facelist[k] = v
+						v.Ngb = 0
+						facelist[k] = v
 						continue
 					}
 					data = strings.ReplaceAll(data, "A", "")
