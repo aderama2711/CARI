@@ -42,11 +42,7 @@ var facelist map[uint64]faces
 // prefixlist for saving producer of prefixes
 var prefixlist map[int][]string
 
-// network map
 var network map[int]map[int]neighbor
-
-// registered route
-var registered_route map[int]map[int]map[string]bool
 
 var mutex sync.Mutex
 
@@ -54,7 +50,6 @@ func main() {
 	facelist = make(map[uint64]faces)
 	prefixlist = make(map[int][]string)
 	network = map[int]map[int]neighbor{}
-	registered_route = make(map[int]map[int]map[string]bool)
 
 	var wg sync.WaitGroup
 
@@ -174,7 +169,6 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					if e != nil {
 						log.Println("Error occured : ", e)
 						recheck_facelist[k] = v
-						v.Ngb = 0
 						continue
 					}
 					data = strings.ReplaceAll(data, "A", "")
@@ -221,9 +215,6 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 		log.Println("===== Request Route Info =====")
 		//request route info
 		for k, v := range facelist {
-			if v.Ngb == 0 {
-				continue
-			}
 
 			log.Print(k, v.Tkn)
 
@@ -302,6 +293,9 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 					var temp map[int]neighbor
 					temp = make(map[int]neighbor)
 					for key, value := range temp_fl {
+						if value.Ngb == 0 {
+							continue
+						}
 						// cost := value.Rtt + (value.Thg * -1) + (float64(value.N_oi) / float64(value.N_in))
 						if value.N_oi == 0 {
 							value.N_oi = 1
@@ -426,14 +420,6 @@ func recalculate_route() {
 			} else {
 				temp_graph := graph
 
-				for k1, _ := range registered_route { // for each router
-					for k2, _ := range registered_route[k1] { // for each face
-						for k3, _ := range registered_route[k1][k2] { //for each prefix
-							registered_route[k1][k2][k3] = false
-						}
-					}
-				}
-
 				n := 3
 				if len(temp_network[cons]) < n {
 					n = len(temp_network[cons]) - 1
@@ -461,27 +447,8 @@ func recalculate_route() {
 						for _, prefix := range temp_prefixlist[prod] {
 							log.Println("Installing routes : ", cons, prefix, best.Distance, temp_network[cons][best.Path[1]].Cst)
 
-							if _, ok := registered_route[cons]; ok {
-								if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
-									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
-										registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = true
-									} else {
-										eprefix := map[string]bool{prefix: true}
-										registered_route[cons][temp_network[cons][best.Path[1]].Fce] = eprefix
-									}
-								} else {
-									eprefix := map[string]bool{prefix: true}
-									eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-									registered_route[cons] = eface
-								}
-							} else {
-								eprefix := map[string]bool{prefix: true}
-								eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-								registered_route[cons] = eface
-							}
-
 							// update route
-							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 							interest.MustBeFresh = true
 							interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -500,41 +467,11 @@ func recalculate_route() {
 					err = temp_graph.RemoveArc(cons, best.Path[1])
 					if err != nil {
 						log.Println(cons, "to", best.Path[1], "not found, try reverse")
-					}
-					err = temp_graph.RemoveArc(best.Path[1], cons)
-					if err != nil {
-						log.Println(best.Path[1], "to", cons, "not found, try reverse")
-					}
-				}
-			}
-		}
-	}
-
-	for k1, _ := range registered_route { // for each router
-		for k2, _ := range registered_route[k1] { // for each face
-			for k3, ok := range registered_route[k1][k2] { //for each prefix
-				if !ok {
-					router := uint64(0)
-
-					for key, value := range temp_facelist {
-						if value.Ngb == k1 {
-							router = key
+						err = temp_graph.RemoveArc(best.Path[1], cons)
+						if err != nil {
+							log.Println(err)
 						}
 					}
-
-					log.Println("Remove routes : ", k3, k2, "from", k1)
-
-					interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("remove")})
-					interest.MustBeFresh = true
-					interest.UpdateParamsDigest() //Update SHA256 params
-
-					data, _, _, err := consumer_interest(interest)
-
-					if err != nil {
-						log.Println("Error occured : ", err)
-					}
-
-					log.Println(data)
 				}
 			}
 		}
