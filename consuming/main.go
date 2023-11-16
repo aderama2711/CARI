@@ -76,7 +76,7 @@ func readconfg() {
 
 func main() {
 	facelist = make(map[uint64]faces)
-	cost = make(map[string]uint64)
+	cost = make(map[int]uint64)
 
 	var wg sync.WaitGroup
 
@@ -181,8 +181,11 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 			v.Ngb = idata
 
-			//TODO : implement Cost from file
-
+			// Add cost from file
+			if val, ok := cost[data]; ok {
+				v.Cst = val
+			}
+			
 			facelist[k] = v
 
 			time.Sleep(500 * time.Millisecond)
@@ -241,7 +244,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 					// Add cost from file
 					if val, ok := cost[data]; ok {
-						//do something here
+						v.Cst = val
 					}
 
 					facelist[k] = v
