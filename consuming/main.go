@@ -182,10 +182,10 @@ func consumer_hello(wg *sync.WaitGroup) {
 			v.Ngb = idata
 
 			// Add cost from file
-			if val, ok := cost[data]; ok {
+			if val, ok := cost[idata]; ok {
 				v.Cst = val
 			}
-			
+
 			facelist[k] = v
 
 			time.Sleep(500 * time.Millisecond)
@@ -243,7 +243,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 					v.Ngb = idata
 
 					// Add cost from file
-					if val, ok := cost[data]; ok {
+					if val, ok := cost[idata]; ok {
 						v.Cst = val
 					}
 
