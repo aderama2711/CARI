@@ -461,18 +461,6 @@ func recalculate_route() {
 						for _, prefix := range temp_prefixlist[prod] {
 							log.Println("Installing routes : ", cons, prefix, best.Distance, temp_network[cons][best.Path[1]].Cst)
 
-							// update route
-							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
-							interest.MustBeFresh = true
-							interest.UpdateParamsDigest() //Update SHA256 params
-
-							data, _, _, err := consumer_interest(interest)
-
-							if err != nil {
-								log.Println("Error occured : ", err)
-								continue
-							}
-
 							if _, ok := registered_route[cons]; ok {
 								if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
 									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
@@ -492,6 +480,18 @@ func recalculate_route() {
 								registered_route[cons] = eface
 							}
 
+							// update route
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest.MustBeFresh = true
+							interest.UpdateParamsDigest() //Update SHA256 params
+
+							data, _, _, err := consumer_interest(interest)
+
+							if err != nil {
+								log.Println("Error occured : ", err)
+								continue
+							}
+
 							log.Println(data)
 						}
 					}
@@ -500,10 +500,10 @@ func recalculate_route() {
 					err = temp_graph.RemoveArc(cons, best.Path[1])
 					if err != nil {
 						log.Println(cons, "to", best.Path[1], "not found, try reverse")
-						err = temp_graph.RemoveArc(best.Path[1], cons)
-						if err != nil {
-							log.Println(err)
-						}
+					}
+					err = temp_graph.RemoveArc(best.Path[1], cons)
+					if err != nil {
+						log.Println(best.Path[1], "to", cons, "not found, try reverse")
 					}
 				}
 			}
