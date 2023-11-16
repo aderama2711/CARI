@@ -469,26 +469,7 @@ func recalculate_route() {
 							data, _, _, err := consumer_interest(interest)
 
 							if err != nil {
-								if _, ok := registered_route[cons]; ok {
-									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
-										if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
-											registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
-										} else {
-											eprefix := map[string]bool{prefix: false}
-											registered_route[cons][temp_network[cons][best.Path[1]].Fce] = eprefix
-										}
-									} else {
-										eprefix := map[string]bool{prefix: false}
-										eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-										registered_route[cons] = eface
-									}
-								} else {
-									eprefix := map[string]bool{prefix: false}
-									eface := map[int]map[string]bool{temp_network[cons][best.Path[1]].Fce: eprefix}
-									registered_route[cons] = eface
-								}
 								log.Println("Error occured : ", err)
-
 								continue
 							}
 
