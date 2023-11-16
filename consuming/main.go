@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/usnistgov/ndn-dpdk/core/nnduration"
 	"github.com/usnistgov/ndn-dpdk/ndn"
 	"github.com/usnistgov/ndn-dpdk/ndn/endpoint"
 	"github.com/usnistgov/ndn-dpdk/ndn/l3"
@@ -365,7 +366,8 @@ func producer_update(name string, fresh int, wg *sync.WaitGroup) {
 				splits := strings.Split(string(interest.AppParameters), ",")
 				cost, _ := strconv.Atoi(splits[1])
 				face, _ := strconv.Atoi(splits[2])
-				register_route(splits[0], cost, face)
+				expired, _ := strconv.Atoi(splits[3])
+				register_route_controller(splits[0], cost, face, expired)
 				payload := []byte(string(interest.AppParameters))
 				return ndn.MakeData(interest, payload, time.Duration(fresh)*time.Millisecond), nil
 			},
@@ -457,6 +459,25 @@ func register_route(name string, cost int, faceid int) {
 		FaceID: faceid,
 	})
 
+	if e != nil {
+		log.Println("Error occured : ", e)
+	}
+	if cr.StatusCode != 200 {
+		log.Println("unexpected response status %d", cr.StatusCode)
+	} else {
+		log.Println("Route registered")
+	}
+}
+
+func register_route_controller(name string, cost int, faceid int, expired int) {
+	c, _ := nfdmgmt.New()
+	cr, e := c.Invoke(context.TODO(), nfdmgmt.RibRegisterCommand{
+		Name:    ndn.ParseName(name),
+		Origin:  0,
+		Cost:    cost,
+		FaceID:  faceid,
+		Expires: nnduration.Milliseconds(expired),
+	})
 	if e != nil {
 		log.Println("Error occured : ", e)
 	}
