@@ -462,7 +462,7 @@ func recalculate_route() {
 							log.Println("Installing routes : ", cons, prefix, best.Distance, temp_network[cons][best.Path[1]].Cst)
 
 							// update route
-							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
+							interest := ndn.MakeInterest(ndn.ParseName("update"), []byte(fmt.Sprintf("%s,%d,%d", prefix, best.Distance, temp_network[cons][best.Path[1]].Fce)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("update")})
 							interest.MustBeFresh = true
 							interest.UpdateParamsDigest() //Update SHA256 params
 
@@ -495,7 +495,7 @@ func recalculate_route() {
 							if _, ok := registered_route[cons]; ok {
 								if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce]; ok {
 									if _, ok := registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix]; ok {
-										registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = false
+										registered_route[cons][temp_network[cons][best.Path[1]].Fce][prefix] = true
 									} else {
 										eprefix := map[string]bool{prefix: true}
 										registered_route[cons][temp_network[cons][best.Path[1]].Fce] = eprefix
@@ -535,10 +535,17 @@ func recalculate_route() {
 				if ok {
 					continue
 				}
+				router := uint64(0)
+
+				for key, value := range temp_facelist {
+					if value.Ngb == k1 {
+						router = key
+					}
+				}
 
 				log.Println("Remove routes : ", k3, k2, "from", k1)
 
-				interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[uint64(k1)].Tkn), ndn.ParseName("remove")})
+				interest := ndn.MakeInterest(ndn.ParseName("remove"), []byte(fmt.Sprintf("%s,%d", k3, k2)), ndn.ForwardingHint{ndn.ParseName(temp_facelist[router].Tkn), ndn.ParseName("remove")})
 				interest.MustBeFresh = true
 				interest.UpdateParamsDigest() //Update SHA256 params
 
