@@ -77,6 +77,7 @@ func readconfg() {
 func main() {
 	facelist = make(map[uint64]faces)
 	cost = make(map[int]uint64)
+	readconfg()
 
 	var wg sync.WaitGroup
 
@@ -174,6 +175,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 			idata, err := strconv.Atoi(numericString)
 			if err != nil {
+				log.Printf(err)
 				log.Printf("IMPOSIBLE!")
 			}
 
