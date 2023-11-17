@@ -37,7 +37,7 @@ var mutex sync.Mutex
 
 func readconfg() {
 	// Read cost configuration file
-	f, err := os.Open("thermopylae.txt")
+	f, err := os.Open("./consuming/clsr.conf")
 
 	if err != nil {
 		log.Fatal(err)
