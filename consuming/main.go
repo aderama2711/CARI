@@ -63,7 +63,7 @@ func readconfg() {
 				asciicontent += fmt.Sprintf("%d", char)
 			}
 
-			as, err := strconv.Atoi(data[1])
+			as, err := strconv.Atoi(asciicontent)
 
 			cost[as] = u
 		}
@@ -175,7 +175,7 @@ func consumer_hello(wg *sync.WaitGroup) {
 
 			idata, err := strconv.Atoi(numericString)
 			if err != nil {
-				log.Printf(err)
+				log.Fatal(err)
 				log.Printf("IMPOSIBLE!")
 			}
 
