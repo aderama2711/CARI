@@ -440,7 +440,7 @@ func consumer_interest(Interest ndn.Interest) (content string, e error) {
 	data, e := endpoint.Consume(context.Background(), Interest,
 		endpoint.ConsumerOptions{})
 
-	if e != nil {
+	if e == nil {
 		// nDataL, nErrorsL := nData.Add(1), nErrors.Load()
 		// fmt.Println(data.Content)
 		content = string(data.Content[:])
