@@ -428,7 +428,7 @@ func recalculate_route() {
 				for i := 0; i < n; i++ {
 					log.Println("Calculate routes", cons, "to", prod)
 					// Search the best path
-					best, err := temp_graph.Shortest(cons, prod)
+					best, err := temp_graph.ShortestSafe(cons, prod)
 					if err != nil {
 						log.Println("Error occured : ", err)
 						break
