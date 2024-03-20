@@ -250,7 +250,7 @@ func consumer_helloandinfo(wg *sync.WaitGroup) {
 				cost := int64(0)
 				Thg := 655360000000 / (value.Thg / 1000)
 				Rtt := ((value.Rtt * 10000) * 65536) / 1000000
-				Rel := ((((1 - value.N_in/value.N_oi + 1) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
+				Rel := ((((1 - value.N_in/value.N_oi) - 0) * (255 - 1)) / (1 - 0)) + 1 //convert (0,1) to (1,255)
 				cost = (int64((Thg)+(Rtt)) / int64(Rel))
 				temp[value.Ngb] = neighbor{Cst: cost, Fce: int(key)}
 
